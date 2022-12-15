@@ -13,6 +13,9 @@ const CLEAR_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
 #[derive(Resource)]
 struct MiningPlatformSprite(Handle<Image>);
 
+#[derive(Resource)]
+struct TileSprite(Handle<Image>);
+
 fn spawn_camera(mut commands: Commands) {
     let mut camera = Camera2dBundle::default();
 
@@ -53,6 +56,8 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
 fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
     let mining_platform_sprite = assets.load("mining_platform.png");
     commands.insert_resource(MiningPlatformSprite(mining_platform_sprite));
+    let tile_texture = assets.load("tile.png");
+    commands.insert_resource(TileSprite(tile_texture));
 }
 
 fn camera_movement(

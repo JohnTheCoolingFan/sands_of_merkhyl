@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 bevy = { version = "0.9", features = ["dynamic"] }
 bevy_prototype_lyon = "0.7"
+bevy_ecs_tilemap = "0.9"
