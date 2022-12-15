@@ -100,7 +100,7 @@ fn main() {
                 ..default()
             },
             ..default()
-        }))
+        }).set(ImagePlugin::default_nearest()))
         .add_plugin(ShapePlugin) // bevy_prototype_lyon
         .add_startup_system_to_stage(StartupStage::PreStartup, load_assets)
         .add_startup_system(spawn_platform)
