@@ -49,6 +49,8 @@ fn spawn_camera(mut commands: Commands) {
     camera.projection.right = 1.0 * ASPECT_RATIO;
     camera.projection.left = -1.0 * ASPECT_RATIO;
 
+    camera.projection.scale = PLATFORM_VIEW_SCALE;
+
     camera.projection.scaling_mode = ScalingMode::None;
 
     commands.spawn(camera);
