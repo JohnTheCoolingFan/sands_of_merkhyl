@@ -50,7 +50,7 @@ fn spawn_camera(mut commands: Commands) {
     camera.projection.left = -1.0 * ASPECT_RATIO;
 
     camera.projection.scale = PLATFORM_VIEW_SCALE;
-    camera.transform = Transform::from_xyz(0.0, 6.0, 0.0);
+    camera.transform.translation.y = 6.0;
 
     camera.projection.scaling_mode = ScalingMode::None;
 
@@ -68,6 +68,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
         ..default()
     });
     // For visualizing vehicle center on the ground level
+    /*
     commands.spawn(GeometryBuilder::build_as(
         &shapes::RegularPolygon {
             sides: 4,
@@ -77,6 +78,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
         DrawMode::Fill(FillMode::color(Color::rgb(1.0, 0.0, 0.0))),
         Transform::from_xyz(0.0, 0.0, 100.0),
     ));
+    */
 }
 
 fn spawn_map(mut commands: Commands, texture_handle: Res<TileSprite>) {
