@@ -68,7 +68,6 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
         ..default()
     });
     // For visualizing vehicle center on the ground level
-    /*
     commands.spawn(GeometryBuilder::build_as(
         &shapes::RegularPolygon {
             sides: 4,
@@ -78,7 +77,6 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
         DrawMode::Fill(FillMode::color(Color::rgb(1.0, 0.0, 0.0))),
         Transform::from_xyz(0.0, 0.0, 100.0),
     ));
-    */
 }
 
 fn spawn_map(mut commands: Commands, texture_handle: Res<TileSprite>) {
@@ -206,6 +204,7 @@ fn main() {
                 }),
         )
         .add_plugin(ShapePlugin) // bevy_prototype_lyon
+        .add_plugin(TilemapPlugin)
         .add_startup_system_to_stage(StartupStage::PreStartup, load_assets)
         .add_startup_system(spawn_platform)
         .add_startup_system(spawn_camera)
