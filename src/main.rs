@@ -8,12 +8,14 @@ use bevy::{
     sprite::Anchor,
     window::PresentMode,
 };
+use bevy_ecs_tilemap::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const CLEAR_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
 const MAP_VIEW_SCALE: f32 = 1.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
+const CHUNK_TILEMAP_SIZE: TilemapSize = TilemapSize { x: 16, y: 16 };
 
 #[derive(Resource)]
 struct MiningPlatformSprite(Handle<Image>);
@@ -76,8 +78,44 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
     */
 }
 
-fn spawn_map(mut commands: Commands) {
-    commands.spawn((Visibility { is_visible: false }, Map));
+fn spawn_map(mut commands: Commands, texture_handle: Res<TileSprite>) {
+    let mut tile_storage = TileStorage::empty(CHUNK_TILEMAP_SIZE);
+    let tilemap_entity = commands.spawn_empty().id();
+    let tilemap_id = TilemapId(tilemap_entity);
+
+    fill_tilemap_rect(
+        TileTextureIndex(0),
+        TilePos { x: 0, y: 0 },
+        CHUNK_TILEMAP_SIZE,
+        tilemap_id,
+        &mut commands,
+        &mut tile_storage,
+    );
+
+    let tile_size = TilemapTileSize { x: 28.0, y: 32.0 };
+    let grid_size = tile_size.into();
+
+    commands.entity(tilemap_entity).insert(TilemapBundle {
+        grid_size,
+        size: CHUNK_TILEMAP_SIZE,
+        storage: tile_storage,
+        texture: TilemapTexture::Single(texture_handle.0.clone()),
+        tile_size,
+        map_type: TilemapType::Hexagon(HexCoordSystem::RowEven),
+        transform: Transform::from_xyz(0.0, 0.0, 50.0),
+        ..default()
+    });
+
+    commands
+        .spawn((
+            Map,
+            TransformBundle::default(),
+            VisibilityBundle {
+                visibility: Visibility { is_visible: false },
+                ..default()
+            },
+        ))
+        .add_child(tilemap_entity);
 }
 
 fn camera_movement(
