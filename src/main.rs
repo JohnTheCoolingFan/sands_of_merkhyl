@@ -1,7 +1,10 @@
 use bevy::{
     input::mouse::{MouseScrollUnit, MouseWheel},
     prelude::*,
-    render::camera::ScalingMode,
+    render::{
+        camera::ScalingMode,
+        render_resource::{FilterMode, SamplerDescriptor},
+    },
     sprite::Anchor,
     window::PresentMode,
 };
@@ -74,7 +77,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
 }
 
 fn spawn_map(mut commands: Commands) {
-    commands.spawn((Visibility{is_visible: false}, Map));
+    commands.spawn((Visibility { is_visible: false }, Map));
 }
 
 fn camera_movement(
@@ -117,7 +120,7 @@ fn switch_view(
                 let (mut projection, mut cam_transform) = camera.single_mut();
                 projection.scale = MAP_VIEW_SCALE;
                 cam_transform.translation = Vec2::new(0.0, 0.0).extend(cam_transform.translation.z);
-            },
+            }
             CurrentView::Platform => {
                 map.single_mut().is_visible = false;
                 let (mut projection, mut cam_transform) = camera.single_mut();
@@ -153,7 +156,13 @@ fn main() {
                     },
                     ..default()
                 })
-                .set(ImagePlugin::default_nearest()),
+                .set(ImagePlugin {
+                    default_sampler: SamplerDescriptor {
+                        mag_filter: FilterMode::Nearest,
+                        min_filter: FilterMode::Linear,
+                        ..default()
+                    },
+                }),
         )
         .add_plugin(ShapePlugin) // bevy_prototype_lyon
         .add_startup_system_to_stage(StartupStage::PreStartup, load_assets)
