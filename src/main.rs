@@ -197,13 +197,7 @@ fn main() {
                     },
                     ..default()
                 })
-                .set(ImagePlugin {
-                    default_sampler: SamplerDescriptor {
-                        mag_filter: FilterMode::Nearest,
-                        min_filter: FilterMode::Linear,
-                        ..default()
-                    },
-                }),
+                .set(ImagePlugin::default_nearest())
         )
         .add_plugin(ShapePlugin) // bevy_prototype_lyon
         .add_plugin(TilemapPlugin)
