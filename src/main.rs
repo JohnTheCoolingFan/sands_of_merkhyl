@@ -10,7 +10,7 @@ use bevy_prototype_lyon::prelude::*;
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const CLEAR_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
 const MAP_VIEW_SCALE: f32 = 1.0;
-const PLATFORM_VIEW_SCALE: f32 = 20.0;
+const PLATFORM_VIEW_SCALE: f32 = 25.0;
 
 #[derive(Resource)]
 struct MiningPlatformSprite(Handle<Image>);
@@ -73,6 +73,10 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
     */
 }
 
+fn spawn_map(mut commands: Commands) {
+    commands.spawn((Visibility{is_visible: false}, Map));
+}
+
 fn camera_movement(
     mut camera: Query<(&mut OrthographicProjection, &mut Transform), With<Camera2d>>,
     input: Res<Input<KeyCode>>,
@@ -118,7 +122,7 @@ fn switch_view(
                 map.single_mut().is_visible = false;
                 let (mut projection, mut cam_transform) = camera.single_mut();
                 projection.scale = PLATFORM_VIEW_SCALE;
-                cam_transform.translation = Vec2::new(0.0, 0.0).extend(cam_transform.translation.z);
+                cam_transform.translation = Vec2::new(0.0, 6.0).extend(cam_transform.translation.z);
             }
         }
     }
@@ -155,6 +159,7 @@ fn main() {
         .add_startup_system_to_stage(StartupStage::PreStartup, load_assets)
         .add_startup_system(spawn_platform)
         .add_startup_system(spawn_camera)
+        .add_startup_system(spawn_map)
         .add_system(camera_movement)
         .add_system(switch_view)
         .run();
