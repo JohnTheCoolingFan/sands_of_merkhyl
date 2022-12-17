@@ -102,14 +102,14 @@ fn spawn_map(mut commands: Commands, texture_handle: Res<TileSprite>) {
         texture: TilemapTexture::Single(texture_handle.0.clone()),
         tile_size,
         map_type: TilemapType::Hexagon(HexCoordSystem::RowEven),
-        transform: Transform::from_xyz(0.0, 0.0, 50.0),
+        transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..default()
     });
 
     commands
         .spawn((
             Map,
-            TransformBundle::default(),
+            TransformBundle::from_transform(Transform::from_xyz(0.0, 0.0, 50.0)),
             VisibilityBundle {
                 visibility: Visibility { is_visible: false },
                 ..default()
