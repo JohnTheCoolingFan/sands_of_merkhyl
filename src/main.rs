@@ -1,10 +1,7 @@
 use bevy::{
     input::mouse::{MouseScrollUnit, MouseWheel},
     prelude::*,
-    render::{
-        camera::ScalingMode,
-        render_resource::{FilterMode, SamplerDescriptor},
-    },
+    render::camera::ScalingMode,
     sprite::Anchor,
     window::PresentMode,
 };
@@ -197,7 +194,7 @@ fn main() {
                     },
                     ..default()
                 })
-                .set(ImagePlugin::default_nearest())
+                .set(ImagePlugin::default_nearest()),
         )
         .add_plugin(ShapePlugin) // bevy_prototype_lyon
         .add_plugin(TilemapPlugin)
