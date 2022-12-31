@@ -91,7 +91,11 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
     */
 }
 
-fn spawn_map(mut commands: Commands, texture_handle: Res<TileSprite>, mut rendered_chunks: ResMut<RenderedChunks>) {
+fn spawn_map(
+    mut commands: Commands,
+    texture_handle: Res<TileSprite>,
+    mut rendered_chunks: ResMut<RenderedChunks>,
+) {
     let mut chunks = Vec::new();
 
     for x in 0..2 {
@@ -131,9 +135,8 @@ fn spawn_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, pos: Chu
     let tile_size = TilemapTileSize { x: 28.0, y: 32.0 };
     let grid_size = tile_size.into();
 
-    commands
-        .entity(tilemap_entity)
-        .insert(TilemapBundle {
+    commands.entity(tilemap_entity).insert((
+        TilemapBundle {
             grid_size,
             size: TILEMAP_CHUNK_SIZE,
             storage: tile_storage,
@@ -146,8 +149,9 @@ fn spawn_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, pos: Chu
                 0.0,
             ),
             ..default()
-        })
-        .insert(Chunk { pos });
+        },
+        Chunk { pos },
+    ));
 
     tilemap_entity
 }
