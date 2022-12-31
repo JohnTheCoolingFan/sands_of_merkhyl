@@ -85,7 +85,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
             ..default()
         },
         DrawMode::Fill(FillMode::color(Color::rgb(1.0, 0.0, 0.0))),
-        Transform::from_xyz(0.0, 0.0, 100.0),
+        Transform::from_xyz(0.0, 0.0, 950.0),
     ));
     */
 }
@@ -97,8 +97,8 @@ fn spawn_map(
 ) {
     let mut chunks = Vec::new();
 
-    for x in 0..2 {
-        for y in 0..2 {
+    for x in 0..3 {
+        for y in 0..3 {
             let pos = IVec2::new(x, y);
             chunks.push(spawn_chunk(&mut commands, &texture_handle.0, pos));
             rendered_chunks.0.insert(pos);
@@ -144,7 +144,12 @@ fn spawn_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, pos: Chu
             map_type: TilemapType::Hexagon(HexCoordSystem::RowEven),
             transform: Transform::from_xyz(
                 tile_size.x * TILEMAP_CHUNK_SIZE.x as f32 * pos.x as f32,
-                tile_size.y * TILEMAP_CHUNK_SIZE.y as f32 * pos.y as f32,
+                TilePos {
+                    x: 1,
+                    y: TILEMAP_CHUNK_SIZE.y,
+                }
+                .center_in_world(&grid_size, &TilemapType::Hexagon(HexCoordSystem::RowEven))
+                .y * pos.y as f32,
                 0.0,
             ),
             ..default()
