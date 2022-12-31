@@ -1,10 +1,9 @@
-use std::collections::HashSet;
-
 use bevy::{
     input::mouse::{MouseScrollUnit, MouseWheel},
     prelude::*,
     render::camera::ScalingMode,
     sprite::Anchor,
+    utils::HashSet,
     window::PresentMode,
 };
 use bevy_ecs_tilemap::prelude::*;
