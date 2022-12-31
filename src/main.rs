@@ -145,7 +145,7 @@ fn spawn_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, pos: Chu
             transform: Transform::from_xyz(
                 tile_size.x * TILEMAP_CHUNK_SIZE.x as f32 * pos.x as f32,
                 TilePos {
-                    x: 1,
+                    x: 0,
                     y: TILEMAP_CHUNK_SIZE.y,
                 }
                 .center_in_world(&grid_size, &TilemapType::Hexagon(HexCoordSystem::RowEven))
