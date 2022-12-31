@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use bevy::{
     input::mouse::{MouseScrollUnit, MouseWheel},
     prelude::*,
@@ -12,7 +14,18 @@ const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const CLEAR_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
 const MAP_VIEW_SCALE: f32 = 1.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
-const CHUNK_TILEMAP_SIZE: TilemapSize = TilemapSize { x: 16, y: 16 };
+const TILEMAP_CHUNK_SIZE: TilemapSize = TilemapSize { x: 16, y: 16 };
+const MAP_TILEMAP_Z: f32 = 900.0;
+
+type ChunkPos = IVec2;
+
+#[derive(Component)]
+struct Chunk {
+    pos: ChunkPos,
+}
+
+#[derive(Resource)]
+struct RenderedChunks(HashSet<ChunkPos>);
 
 #[derive(Resource)]
 struct MiningPlatformSprite(Handle<Image>);
@@ -78,44 +91,65 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
     */
 }
 
-fn spawn_map(mut commands: Commands, texture_handle: Res<TileSprite>) {
-    let mut tile_storage = TileStorage::empty(CHUNK_TILEMAP_SIZE);
+fn spawn_map(mut commands: Commands, texture_handle: Res<TileSprite>, mut rendered_chunks: ResMut<RenderedChunks>) {
+    let mut chunks = Vec::new();
+
+    for x in 0..2 {
+        for y in 0..2 {
+            let pos = IVec2::new(x, y);
+            chunks.push(spawn_chunk(&mut commands, &texture_handle.0, pos));
+            rendered_chunks.0.insert(pos);
+        }
+    }
+
+    commands
+        .spawn((
+            Map,
+            TransformBundle::from_transform(Transform::from_xyz(0.0, 0.0, MAP_TILEMAP_Z)),
+            VisibilityBundle {
+                visibility: Visibility { is_visible: false },
+                ..default()
+            },
+        ))
+        .push_children(&chunks);
+}
+
+fn spawn_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, pos: ChunkPos) -> Entity {
+    let mut tile_storage = TileStorage::empty(TILEMAP_CHUNK_SIZE);
     let tilemap_entity = commands.spawn_empty().id();
     let tilemap_id = TilemapId(tilemap_entity);
 
     fill_tilemap_rect(
         TileTextureIndex(0),
         TilePos { x: 0, y: 0 },
-        CHUNK_TILEMAP_SIZE,
+        TILEMAP_CHUNK_SIZE,
         tilemap_id,
-        &mut commands,
+        commands,
         &mut tile_storage,
     );
 
     let tile_size = TilemapTileSize { x: 28.0, y: 32.0 };
     let grid_size = tile_size.into();
 
-    commands.entity(tilemap_entity).insert(TilemapBundle {
-        grid_size,
-        size: CHUNK_TILEMAP_SIZE,
-        storage: tile_storage,
-        texture: TilemapTexture::Single(texture_handle.0.clone()),
-        tile_size,
-        map_type: TilemapType::Hexagon(HexCoordSystem::RowEven),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..default()
-    });
-
     commands
-        .spawn((
-            Map,
-            TransformBundle::from_transform(Transform::from_xyz(0.0, 0.0, 50.0)),
-            VisibilityBundle {
-                visibility: Visibility { is_visible: false },
-                ..default()
-            },
-        ))
-        .add_child(tilemap_entity);
+        .entity(tilemap_entity)
+        .insert(TilemapBundle {
+            grid_size,
+            size: TILEMAP_CHUNK_SIZE,
+            storage: tile_storage,
+            texture: TilemapTexture::Single(texture_handle.clone()),
+            tile_size,
+            map_type: TilemapType::Hexagon(HexCoordSystem::RowEven),
+            transform: Transform::from_xyz(
+                tile_size.x * TILEMAP_CHUNK_SIZE.x as f32 * pos.x as f32,
+                tile_size.y * TILEMAP_CHUNK_SIZE.y as f32 * pos.y as f32,
+                0.0,
+            ),
+            ..default()
+        })
+        .insert(Chunk { pos });
+
+    tilemap_entity
 }
 
 fn camera_movement(
@@ -181,6 +215,7 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
         .insert_resource(CurrentView::Platform)
+        .insert_resource(RenderedChunks(HashSet::new()))
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
