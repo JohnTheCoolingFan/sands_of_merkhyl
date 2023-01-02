@@ -51,7 +51,7 @@ impl CurrentView {
 struct Map;
 
 fn components_from_global(global_pos: IVec2) -> (ChunkPos, TilePos) {
-    let chunk_pos = ChunkPos::new(global_pos.x / TILEMAP_CHUNK_SIZE.x as i32, global_pos.y / TILEMAP_CHUNK_SIZE.y as i32);
+    let chunk_pos = ChunkPos::new(global_pos.x.div_euclid(TILEMAP_CHUNK_SIZE.x as i32), global_pos.y.div_euclid(TILEMAP_CHUNK_SIZE.y as i32));
     let tile_pos = TilePos { x: global_pos.x.rem_euclid(TILEMAP_CHUNK_SIZE.x as i32) as u32, y: global_pos.y.rem_euclid(TILEMAP_CHUNK_SIZE.y as i32) as u32 };
     (chunk_pos, tile_pos)
 }
