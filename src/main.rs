@@ -18,6 +18,19 @@ const MAP_TILEMAP_Z: f32 = 900.0;
 
 type ChunkPos = IVec2;
 
+#[derive(Component, Debug, Clone, Copy)]
+enum TileVisibility {
+    Visible,
+    Charted,
+    Unknown,
+}
+
+#[derive(Component, Debug, Clone, Copy)]
+#[repr(u8)]
+enum TileKind {
+    Empty = 1,
+}
+
 #[derive(Component)]
 struct Chunk {
     pos: ChunkPos,
