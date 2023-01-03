@@ -80,7 +80,10 @@ fn chunk_and_local_from_global(global_pos: IVec2) -> (ChunkPos, TilePos) {
 }
 
 fn global_from_chunk_and_local(chunk: IVec2, local: TilePos) -> IVec2 {
-    IVec2::new(chunk.x * TILEMAP_CHUNK_SIZE.x as i32 + local.x as i32, chunk.y * TILEMAP_CHUNK_SIZE.y as i32 + local.y as i32)
+    IVec2::new(
+        chunk.x * TILEMAP_CHUNK_SIZE.x as i32 + local.x as i32,
+        chunk.y * TILEMAP_CHUNK_SIZE.y as i32 + local.y as i32,
+    )
 }
 
 fn spawn_camera(mut commands: Commands) {
