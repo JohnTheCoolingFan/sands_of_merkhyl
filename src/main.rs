@@ -67,7 +67,7 @@ impl CurrentView {
 #[derive(Component)]
 struct Map;
 
-fn components_from_global(global_pos: IVec2) -> (ChunkPos, TilePos) {
+fn chunk_and_local_from_global(global_pos: IVec2) -> (ChunkPos, TilePos) {
     let chunk_pos = ChunkPos::new(
         global_pos.x.div_euclid(TILEMAP_CHUNK_SIZE.x as i32),
         global_pos.y.div_euclid(TILEMAP_CHUNK_SIZE.y as i32),
@@ -77,6 +77,10 @@ fn components_from_global(global_pos: IVec2) -> (ChunkPos, TilePos) {
         y: global_pos.y.rem_euclid(TILEMAP_CHUNK_SIZE.y as i32) as u32,
     };
     (chunk_pos, tile_pos)
+}
+
+fn global_from_chunk_and_local(chunk: IVec2, local: TilePos) -> IVec2 {
+    IVec2::new(chunk.x * TILEMAP_CHUNK_SIZE.x as i32 + local.x as i32, chunk.y * TILEMAP_CHUNK_SIZE.y as i32 + local.y as i32)
 }
 
 fn spawn_camera(mut commands: Commands) {
