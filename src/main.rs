@@ -68,8 +68,14 @@ impl CurrentView {
 struct Map;
 
 fn components_from_global(global_pos: IVec2) -> (ChunkPos, TilePos) {
-    let chunk_pos = ChunkPos::new(global_pos.x.div_euclid(TILEMAP_CHUNK_SIZE.x as i32), global_pos.y.div_euclid(TILEMAP_CHUNK_SIZE.y as i32));
-    let tile_pos = TilePos { x: global_pos.x.rem_euclid(TILEMAP_CHUNK_SIZE.x as i32) as u32, y: global_pos.y.rem_euclid(TILEMAP_CHUNK_SIZE.y as i32) as u32 };
+    let chunk_pos = ChunkPos::new(
+        global_pos.x.div_euclid(TILEMAP_CHUNK_SIZE.x as i32),
+        global_pos.y.div_euclid(TILEMAP_CHUNK_SIZE.y as i32),
+    );
+    let tile_pos = TilePos {
+        x: global_pos.x.rem_euclid(TILEMAP_CHUNK_SIZE.x as i32) as u32,
+        y: global_pos.y.rem_euclid(TILEMAP_CHUNK_SIZE.y as i32) as u32,
+    };
     (chunk_pos, tile_pos)
 }
 
@@ -140,19 +146,34 @@ fn spawn_map(
         .push_children(&chunks);
 }
 
-fn spawn_visual_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, pos: ChunkPos) -> Entity {
+fn spawn_visual_chunk(
+    commands: &mut Commands,
+    texture_handle: &Handle<Image>,
+    pos: ChunkPos,
+) -> Entity {
     let mut tile_storage = TileStorage::empty(TILEMAP_CHUNK_SIZE);
     let tilemap_entity = commands.spawn_empty().id();
     let tilemap_id = TilemapId(tilemap_entity);
 
-    fill_tilemap_rect(
-        TileTextureIndex(0),
-        TilePos { x: 0, y: 0 },
-        TILEMAP_CHUNK_SIZE,
-        tilemap_id,
-        commands,
-        &mut tile_storage,
-    );
+    for x in 0..TILEMAP_CHUNK_SIZE.x {
+        for y in 0..TILEMAP_CHUNK_SIZE.y {
+            let pos = TilePos { x, y };
+            let tile_entity = commands.spawn((
+                TileBundle {
+                    position: pos,
+                    texture_index: TileTextureIndex(0), // TODO,
+                    tilemap_id,
+                    visible: TileVisible(true),
+                    flip: TileFlip::default(),
+                    color: TileColor::default(),
+                    old_position: TilePosOld::default(),
+                },
+                TileVisibility::Visible, // TODO
+                TileKind::Empty,
+            ));
+            tile_storage.set(&pos, tile_entity.id());
+        }
+    }
 
     let tile_size = TilemapTileSize { x: 28.0, y: 32.0 };
     let grid_size = tile_size.into();
@@ -183,7 +204,17 @@ fn spawn_visual_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, p
     tilemap_entity
 }
 
-fn update_texture(tiles: Query<(&mut TileTextureIndex, &mut TileColor, &TileVisibility, &TileKind), Or<(Changed<TileVisibility>, Changed<TileKind>)>>) {
+fn update_texture(
+    tiles: Query<
+        (
+            &mut TileTextureIndex,
+            &mut TileColor,
+            &TileVisibility,
+            &TileKind,
+        ),
+        Or<(Changed<TileVisibility>, Changed<TileKind>)>,
+    >,
+) {
     todo!()
 }
 
