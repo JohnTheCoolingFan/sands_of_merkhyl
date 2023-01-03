@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+
 use bevy::{
     input::mouse::{MouseScrollUnit, MouseWheel},
     prelude::*,
@@ -177,6 +179,10 @@ fn spawn_visual_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, p
     ));
 
     tilemap_entity
+}
+
+fn update_texture(tiles: Query<(&mut TileTextureIndex, &TileVisibility, &TileKind), Or<(Changed<TileVisibility>, Changed<TileKind>)>>) {
+    todo!()
 }
 
 fn camera_movement(
