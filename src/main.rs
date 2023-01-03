@@ -13,6 +13,8 @@ use bevy_prototype_lyon::prelude::*;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const CLEAR_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
+const VISIBLE_TILE_COLOR: TileColor = TileColor(Color::rgb(1.0, 1.0, 1.0));
+const CHARTED_TILE_COLOR: TileColor = TileColor(Color::rgb(0.3, 0.3, 0.3));
 const MAP_VIEW_SCALE: f32 = 1.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
 const TILEMAP_CHUNK_SIZE: TilemapSize = TilemapSize { x: 16, y: 16 };
@@ -181,7 +183,7 @@ fn spawn_visual_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, p
     tilemap_entity
 }
 
-fn update_texture(tiles: Query<(&mut TileTextureIndex, &TileVisibility, &TileKind), Or<(Changed<TileVisibility>, Changed<TileKind>)>>) {
+fn update_texture(tiles: Query<(&mut TileTextureIndex, &mut TileColor, &TileVisibility, &TileKind), Or<(Changed<TileVisibility>, Changed<TileKind>)>>) {
     todo!()
 }
 
