@@ -209,7 +209,7 @@ fn spawn_visual_chunk(
 }
 
 fn update_texture(
-    tiles: Query<
+    mut tiles: Query<
         (
             &mut TileTextureIndex,
             &mut TileColor,
@@ -219,7 +219,18 @@ fn update_texture(
         Or<(Changed<TileVisibility>, Changed<TileKind>)>,
     >,
 ) {
-    todo!()
+    for (mut texture_index, mut color, visibility, kind) in tiles.iter_mut() {
+        texture_index.0 = if matches!(visibility, TileVisibility::Unknown) {
+            0
+        } else {
+            (*kind as u8).into()
+        };
+        if matches!(visibility, TileVisibility::Charted) {
+            *color = CHARTED_TILE_COLOR
+        } else {
+            *color = VISIBLE_TILE_COLOR
+        };
+    }
 }
 
 fn camera_movement(
@@ -309,5 +320,6 @@ fn main() {
         .add_startup_system(spawn_map)
         .add_system(camera_movement)
         .add_system(switch_view)
+        .add_system(update_texture)
         .run();
 }
