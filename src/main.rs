@@ -21,8 +21,9 @@ const MAP_VIEW_SCALE: f32 = 1.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
 const TILEMAP_CHUNK_SIZE: TilemapSize = TilemapSize { x: 32, y: 32 };
 const MAP_TILEMAP_Z: f32 = 900.0;
-const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 28.0, y: 32.0 };
-const GRID_SIZE: TilemapGridSize = TilemapGridSize { x: 28.0, y: 32.0 };
+const TILEMAP_TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 28.0, y: 32.0 };
+const TILEMAP_GRID_SIZE: TilemapGridSize = TilemapGridSize { x: 28.0, y: 32.0 };
+const TILEMAP_TYPE: TilemapType = TilemapType::Hexagon(HexCoordSystem::RowEven);
 
 type ChunkPos = IVec2;
 
@@ -106,14 +107,19 @@ fn global_from_chunk_and_local(chunk: IVec2, local: TilePos) -> IVec2 {
 
 fn chunk_in_world_position(pos: ChunkPos) -> Vec2 {
     Vec2::new(
-        TILE_SIZE.x * TILEMAP_CHUNK_SIZE.x as f32 * pos.x as f32,
+        TILEMAP_TILE_SIZE.x * TILEMAP_CHUNK_SIZE.x as f32 * pos.x as f32,
         TilePos {
             x: 0,
             y: TILEMAP_CHUNK_SIZE.y,
         }
-        .center_in_world(&GRID_SIZE, &TilemapType::Hexagon(HexCoordSystem::RowEven))
+        .center_in_world(&TILEMAP_GRID_SIZE, &TILEMAP_TYPE)
         .y * pos.y as f32,
     )
+}
+
+fn chunk_center_position(pos: ChunkPos) -> Vec2 {
+    let origin_pos = chunk_in_world_position(pos);
+    origin_pos + get_tilemap_center(&TILEMAP_CHUNK_SIZE, &TILEMAP_GRID_SIZE, &TILEMAP_TYPE)
 }
 
 fn spawn_camera(mut commands: Commands) {
@@ -215,12 +221,12 @@ fn spawn_chunk(
 
     commands.entity(tilemap_entity).insert((
         TilemapBundle {
-            grid_size: GRID_SIZE,
+            grid_size: TILEMAP_GRID_SIZE,
             size: TILEMAP_CHUNK_SIZE,
             storage: tile_storage,
             texture: TilemapTexture::Single(texture_handle.clone()),
-            tile_size: TILE_SIZE,
-            map_type: TilemapType::Hexagon(HexCoordSystem::RowEven),
+            tile_size: TILEMAP_TILE_SIZE,
+            map_type: TILEMAP_TYPE,
             transform: Transform::from_translation(chunk_in_world_position(pos).extend(0.0)),
             visibility: Visibility {
                 is_visible: visible,
