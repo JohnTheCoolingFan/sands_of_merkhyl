@@ -35,6 +35,7 @@ enum TileVisibility {
 #[repr(u8)]
 enum TileKind {
     Empty = 1,
+    Village = 2,
 }
 
 #[derive(Component)]
