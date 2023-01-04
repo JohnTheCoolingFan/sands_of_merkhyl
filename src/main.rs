@@ -24,6 +24,7 @@ const MAP_TILEMAP_Z: f32 = 900.0;
 
 type ChunkPos = IVec2;
 
+/// How visible (to player) tile is
 #[derive(Component, Debug, Clone, Copy)]
 enum TileVisibility {
     Visible,
@@ -31,6 +32,7 @@ enum TileVisibility {
     Unknown,
 }
 
+/// What kind of tile it is
 #[derive(Component, Debug, Clone, Copy)]
 #[repr(u8)]
 enum TileKind {
@@ -38,20 +40,30 @@ enum TileKind {
     Village = 2,
 }
 
+/// Marker struct for chunks
 #[derive(Component)]
 struct Chunk {
     pos: ChunkPos,
 }
 
+/// Chunks loaded solely by a player, whould be visible
+#[derive(Resource)]
+struct PlayerLoadedChunks(HashSet<ChunkPos>);
+
+/// Chunks loaded by anything. Chunks not loaded by a player should not be rendered to avoid seeing
+/// where npcs are
 #[derive(Resource)]
 struct LoadedChunks(HashSet<ChunkPos>);
 
+/// Mining platform sprite
 #[derive(Resource)]
 struct MiningPlatformSprite(Handle<Image>);
 
+/// Sptitesheet of map tiles
 #[derive(Resource)]
-struct TilesSprites(Handle<Image>);
+struct MapTilesSprites(Handle<Image>);
 
+/// Current view mode, map is hiddent when viewing the world
 #[derive(Resource)]
 enum CurrentView {
     Platform,
@@ -67,6 +79,7 @@ impl CurrentView {
     }
 }
 
+/// Marker struct for Map entity that holds all chunks
 #[derive(Component)]
 struct Map;
 
@@ -131,7 +144,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
 
 fn spawn_map(
     mut commands: Commands,
-    texture_handle: Res<TilesSprites>,
+    texture_handle: Res<MapTilesSprites>,
     mut rendered_chunks: ResMut<LoadedChunks>,
 ) {
     let mut chunks = Vec::new();
@@ -294,7 +307,7 @@ fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
     let mining_platform_sprite = assets.load("mining_platform.png");
     commands.insert_resource(MiningPlatformSprite(mining_platform_sprite));
     let tile_texture = assets.load("map_tiles.png");
-    commands.insert_resource(TilesSprites(tile_texture));
+    commands.insert_resource(MapTilesSprites(tile_texture));
 }
 
 fn main() {
