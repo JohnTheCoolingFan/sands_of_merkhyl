@@ -19,7 +19,7 @@ const PLAYER_CHUNK_LOAD_DISTANCE: f32 = 100.0;
 const NPC_CHUNK_LOAD_DISTANCE: f32 = 30.0;
 const MAP_VIEW_SCALE: f32 = 1.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
-const TILEMAP_CHUNK_SIZE: TilemapSize = TilemapSize { x: 16, y: 16 };
+const TILEMAP_CHUNK_SIZE: TilemapSize = TilemapSize { x: 32, y: 32 };
 const MAP_TILEMAP_Z: f32 = 900.0;
 
 type ChunkPos = IVec2;
@@ -43,13 +43,13 @@ struct Chunk {
 }
 
 #[derive(Resource)]
-struct RenderedChunks(HashSet<ChunkPos>);
+struct LoadedChunks(HashSet<ChunkPos>);
 
 #[derive(Resource)]
 struct MiningPlatformSprite(Handle<Image>);
 
 #[derive(Resource)]
-struct TileSprite(Handle<Image>);
+struct TilesSprites(Handle<Image>);
 
 #[derive(Resource)]
 enum CurrentView {
@@ -130,8 +130,8 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
 
 fn spawn_map(
     mut commands: Commands,
-    texture_handle: Res<TileSprite>,
-    mut rendered_chunks: ResMut<RenderedChunks>,
+    texture_handle: Res<TilesSprites>,
+    mut rendered_chunks: ResMut<LoadedChunks>,
 ) {
     let mut chunks = Vec::new();
 
@@ -292,8 +292,8 @@ fn switch_view(
 fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
     let mining_platform_sprite = assets.load("mining_platform.png");
     commands.insert_resource(MiningPlatformSprite(mining_platform_sprite));
-    let tile_texture = assets.load("map_tile.png");
-    commands.insert_resource(TileSprite(tile_texture));
+    let tile_texture = assets.load("map_tiles.png");
+    commands.insert_resource(TilesSprites(tile_texture));
 }
 
 fn main() {
@@ -301,7 +301,7 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
         .insert_resource(CurrentView::Platform)
-        .insert_resource(RenderedChunks(HashSet::new()))
+        .insert_resource(LoadedChunks(HashSet::new()))
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
