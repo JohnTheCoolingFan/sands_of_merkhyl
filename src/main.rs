@@ -138,7 +138,7 @@ fn spawn_map(
     for x in 0..3 {
         for y in 0..3 {
             let pos = IVec2::new(x, y);
-            chunks.push(spawn_visual_chunk(&mut commands, &texture_handle.0, pos));
+            chunks.push(spawn_chunk(&mut commands, &texture_handle.0, pos));
             rendered_chunks.0.insert(pos);
         }
     }
@@ -155,7 +155,7 @@ fn spawn_map(
         .push_children(&chunks);
 }
 
-fn spawn_visual_chunk(
+fn spawn_chunk(
     commands: &mut Commands,
     texture_handle: &Handle<Image>,
     pos: ChunkPos,
