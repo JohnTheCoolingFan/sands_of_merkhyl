@@ -21,6 +21,8 @@ const MAP_VIEW_SCALE: f32 = 1.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
 const TILEMAP_CHUNK_SIZE: TilemapSize = TilemapSize { x: 32, y: 32 };
 const MAP_TILEMAP_Z: f32 = 900.0;
+const TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 28.0, y: 32.0 };
+const GRID_SIZE: TilemapGridSize = TilemapGridSize { x: 28.0, y: 32.0 };
 
 type ChunkPos = IVec2;
 
@@ -102,6 +104,18 @@ fn global_from_chunk_and_local(chunk: IVec2, local: TilePos) -> IVec2 {
     )
 }
 
+fn chunk_in_world_position(pos: ChunkPos) -> Vec2 {
+    Vec2::new(
+        TILE_SIZE.x * TILEMAP_CHUNK_SIZE.x as f32 * pos.x as f32,
+        TilePos {
+            x: 0,
+            y: TILEMAP_CHUNK_SIZE.y,
+        }
+        .center_in_world(&GRID_SIZE, &TilemapType::Hexagon(HexCoordSystem::RowEven))
+        .y * pos.y as f32,
+    )
+}
+
 fn spawn_camera(mut commands: Commands) {
     let mut camera = Camera2dBundle::default();
 
@@ -169,11 +183,7 @@ fn spawn_map(
         .push_children(&chunks);
 }
 
-fn spawn_chunk(
-    commands: &mut Commands,
-    texture_handle: &Handle<Image>,
-    pos: ChunkPos,
-) -> Entity {
+fn spawn_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, pos: ChunkPos) -> Entity {
     let mut tile_storage = TileStorage::empty(TILEMAP_CHUNK_SIZE);
     let tilemap_entity = commands.spawn_empty().id();
     let tilemap_id = TilemapId(tilemap_entity);
@@ -198,27 +208,15 @@ fn spawn_chunk(
         }
     }
 
-    let tile_size = TilemapTileSize { x: 28.0, y: 32.0 };
-    let grid_size = tile_size.into();
-
     commands.entity(tilemap_entity).insert((
         TilemapBundle {
-            grid_size,
+            grid_size: GRID_SIZE,
             size: TILEMAP_CHUNK_SIZE,
             storage: tile_storage,
             texture: TilemapTexture::Single(texture_handle.clone()),
-            tile_size,
+            tile_size: TILE_SIZE,
             map_type: TilemapType::Hexagon(HexCoordSystem::RowEven),
-            transform: Transform::from_xyz(
-                tile_size.x * TILEMAP_CHUNK_SIZE.x as f32 * pos.x as f32,
-                TilePos {
-                    x: 0,
-                    y: TILEMAP_CHUNK_SIZE.y,
-                }
-                .center_in_world(&grid_size, &TilemapType::Hexagon(HexCoordSystem::RowEven))
-                .y * pos.y as f32,
-                0.0,
-            ),
+            transform: Transform::from_translation(chunk_in_world_position(pos).extend(0.0)),
             ..default()
         },
         Chunk { pos },
