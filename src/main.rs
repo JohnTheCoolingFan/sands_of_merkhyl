@@ -166,7 +166,7 @@ fn spawn_map(
     for x in 0..3 {
         for y in 0..3 {
             let pos = IVec2::new(x, y);
-            chunks.push(spawn_chunk(&mut commands, &texture_handle.0, pos));
+            chunks.push(spawn_chunk(&mut commands, &texture_handle.0, pos, true));
             rendered_chunks.0.insert(pos);
         }
     }
@@ -183,7 +183,12 @@ fn spawn_map(
         .push_children(&chunks);
 }
 
-fn spawn_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, pos: ChunkPos) -> Entity {
+fn spawn_chunk(
+    commands: &mut Commands,
+    texture_handle: &Handle<Image>,
+    pos: ChunkPos,
+    visible: bool,
+) -> Entity {
     let mut tile_storage = TileStorage::empty(TILEMAP_CHUNK_SIZE);
     let tilemap_entity = commands.spawn_empty().id();
     let tilemap_id = TilemapId(tilemap_entity);
@@ -217,6 +222,9 @@ fn spawn_chunk(commands: &mut Commands, texture_handle: &Handle<Image>, pos: Chu
             tile_size: TILE_SIZE,
             map_type: TilemapType::Hexagon(HexCoordSystem::RowEven),
             transform: Transform::from_translation(chunk_in_world_position(pos).extend(0.0)),
+            visibility: Visibility {
+                is_visible: visible,
+            },
             ..default()
         },
         Chunk { pos },
