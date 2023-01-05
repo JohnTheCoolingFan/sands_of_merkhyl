@@ -8,7 +8,7 @@ use bevy::{
     utils::HashSet,
     window::PresentMode,
 };
-use bevy_ecs_tilemap::prelude::*;
+use bevy_ecs_tilemap::prelude::{offset::RowEvenPos, *};
 use bevy_prototype_lyon::prelude::*;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -86,23 +86,23 @@ impl CurrentView {
 #[derive(Component)]
 struct Map;
 
-fn chunk_and_local_from_global(global_pos: IVec2) -> (ChunkPos, TilePos) {
+fn chunk_and_local_from_global(global_pos: RowEvenPos) -> (ChunkPos, TilePos) {
     let chunk_pos = ChunkPos::new(
-        global_pos.x.div_euclid(TILEMAP_CHUNK_SIZE.x as i32),
-        global_pos.y.div_euclid(TILEMAP_CHUNK_SIZE.y as i32),
+        global_pos.q.div_euclid(TILEMAP_CHUNK_SIZE.x as i32),
+        global_pos.r.div_euclid(TILEMAP_CHUNK_SIZE.y as i32),
     );
     let tile_pos = TilePos {
-        x: global_pos.x.rem_euclid(TILEMAP_CHUNK_SIZE.x as i32) as u32,
-        y: global_pos.y.rem_euclid(TILEMAP_CHUNK_SIZE.y as i32) as u32,
+        x: global_pos.q.rem_euclid(TILEMAP_CHUNK_SIZE.x as i32) as u32,
+        y: global_pos.r.rem_euclid(TILEMAP_CHUNK_SIZE.y as i32) as u32,
     };
     (chunk_pos, tile_pos)
 }
 
-fn global_from_chunk_and_local(chunk: IVec2, local: TilePos) -> IVec2 {
-    IVec2::new(
-        chunk.x * TILEMAP_CHUNK_SIZE.x as i32 + local.x as i32,
-        chunk.y * TILEMAP_CHUNK_SIZE.y as i32 + local.y as i32,
-    )
+fn global_from_chunk_and_local(chunk: IVec2, local: TilePos) -> RowEvenPos {
+    RowEvenPos {
+        q: chunk.x * TILEMAP_CHUNK_SIZE.x as i32 + local.x as i32,
+        r: chunk.y * TILEMAP_CHUNK_SIZE.y as i32 + local.y as i32,
+    }
 }
 
 fn chunk_in_world_position(pos: ChunkPos) -> Vec2 {
