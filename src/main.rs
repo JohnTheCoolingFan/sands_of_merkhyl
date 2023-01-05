@@ -54,6 +54,10 @@ struct Chunk {
 #[derive(Resource)]
 struct PlayerLoadedChunks(HashSet<ChunkPos>);
 
+/// Chunks loaded by a camera
+#[derive(Resource)]
+struct CameraLoadedChunks(HashSet<ChunkPos>);
+
 /// Chunks loaded by anything. Chunks not loaded by a player should not be rendered to avoid seeing
 /// where npcs are
 #[derive(Resource)]
@@ -355,6 +359,8 @@ fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
 }
 
 fn main() {
+    println!("{}", camera_to_chunk_pos(Vec2::new(-1.0, -1.0)));
+
     let height = 900.0;
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
