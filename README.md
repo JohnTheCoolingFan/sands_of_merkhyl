@@ -1,3 +1,3 @@
-# Sands on which the Sun never sets
+# Sun never sets on the sands of Merkhyl
 
-Short internal name: Sands
+Short internal name: Sands of Merkhyl or just Sands
