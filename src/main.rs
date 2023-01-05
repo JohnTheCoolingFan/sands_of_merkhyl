@@ -365,6 +365,39 @@ fn switch_view(
     }
 }
 
+fn load_chunks_player(
+    mut commands: Commands,
+    mut player_loaded_chunks: ResMut<PlayerLoadedChunks>,
+) {
+    todo!()
+}
+
+fn load_chunks_camera(
+    mut commands: Commands,
+    mut camera_loaded_chunks: ResMut<CameraLoadedChunks>,
+    player_loaded_chunks: Res<PlayerLoadedChunks>,
+) {
+    todo!()
+}
+
+fn load_chunks_npc(
+    mut commands: Commands,
+    mut loaded_chunks: ResMut<LoadedChunks>,
+    camera_loaded_chunks: Res<CameraLoadedChunks>,
+    player_loaded_chunks: Res<PlayerLoadedChunks>,
+) {
+    todo!()
+}
+
+fn chunk_unload(
+    mut commands: Commands,
+    mut chunks: ResMut<LoadedChunks>,
+    mut camera_chunks: ResMut<CameraLoadedChunks>,
+    mut player_chunks: ResMut<PlayerLoadedChunks>,
+) {
+    todo!()
+}
+
 fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
     let mining_platform_sprite = assets.load("mining_platform.png");
     commands.insert_resource(MiningPlatformSprite(mining_platform_sprite));
@@ -402,5 +435,9 @@ fn main() {
         .add_system(camera_movement)
         .add_system(switch_view)
         .add_system(update_texture)
+        .add_system(load_chunks_player)
+        .add_system(load_chunks_camera.after(load_chunks_player))
+        .add_system(load_chunks_npc.after(load_chunks_camera))
+        .add_system(chunk_unload.after(load_chunks_npc))
         .run();
 }
