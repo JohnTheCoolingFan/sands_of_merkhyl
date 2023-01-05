@@ -63,11 +63,10 @@ struct Chunk {
 /// Chunks loaded by anything. Chunks not loaded by a player should not be rendered to avoid seeing
 /// where npcs are
 #[derive(Resource, Default)]
-struct LoadedChunks {
-    all: HashSet<ChunkPos>,
-    player: HashSet<ChunkPos>,
-    camera: HashSet<ChunkPos>,
-}
+struct LoadedChunks(HashSet<ChunkPos>);
+
+#[derive(Resource, Default)]
+struct LoadedInvisibleChunks(HashSet<ChunkPos>);
 
 /// Mining platform sprite
 #[derive(Resource)]
@@ -219,7 +218,7 @@ fn spawn_map(
         for y in 0..3 {
             let pos = IVec2::new(x, y);
             chunks.push(spawn_chunk(&mut commands, &texture_handle.0, pos, true));
-            loaded_chunks.all.insert(pos);
+            loaded_chunks.0.insert(pos);
         }
     }
 
@@ -390,6 +389,7 @@ fn main() {
         .insert_resource(ClearColor(CLEAR_COLOR))
         .insert_resource(CurrentView::Platform)
         .insert_resource(LoadedChunks::default())
+        .insert_resource(LoadedInvisibleChunks::default())
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
