@@ -10,6 +10,7 @@ use bevy::{
 };
 use bevy_ecs_tilemap::prelude::{offset::RowEvenPos, *};
 use bevy_prototype_lyon::prelude::*;
+use splines::{Spline, Key};
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const CLEAR_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
@@ -136,6 +137,22 @@ fn spawn_camera(mut commands: Commands) {
     camera.projection.scaling_mode = ScalingMode::None;
 
     commands.spawn(camera);
+}
+
+fn spline_from_weights(weights: Vec<(TileKind, f32)>) -> Spline<f32, f32> {
+    let weights_sum: f32 = weights.iter().map(|(_, w)| w).sum();
+    let mut weight_so_far: f32 = 0.0;
+    let keys: Vec<_> = weights.into_iter().map(|(k, w)| {
+        let value = (k as u8) as f32;
+        let key_value = weight_so_far / weights_sum;
+        weight_so_far += w;
+        Key {
+            t: key_value,
+            value,
+            interpolation: splines::Interpolation::Step(1.0)
+        }
+    }).collect();
+    Spline::from_vec(keys)
 }
 
 fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
