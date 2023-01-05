@@ -1,5 +1,5 @@
 [package]
-name = "desert_stranding"
+name = "sands_of_wasteland"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,3 +9,5 @@ edition = "2021"
 bevy = { version = "0.9", features = ["dynamic"] }
 bevy_prototype_lyon = "0.7"
 bevy_ecs_tilemap = "0.9"
+rand = "0.8"
+splines = { version = "4.1", features = ["glam"] }
