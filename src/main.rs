@@ -359,8 +359,6 @@ fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
 }
 
 fn main() {
-    println!("{}", camera_to_chunk_pos(Vec2::new(-1.0, -1.0)));
-
     let height = 900.0;
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
