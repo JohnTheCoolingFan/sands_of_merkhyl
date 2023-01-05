@@ -60,18 +60,14 @@ struct Chunk {
     pos: ChunkPos,
 }
 
-/// Chunks loaded solely by a player, whould be visible
-#[derive(Resource)]
-struct PlayerLoadedChunks(HashSet<ChunkPos>);
-
-/// Chunks loaded by a camera
-#[derive(Resource)]
-struct CameraLoadedChunks(HashSet<ChunkPos>);
-
 /// Chunks loaded by anything. Chunks not loaded by a player should not be rendered to avoid seeing
 /// where npcs are
-#[derive(Resource)]
-struct LoadedChunks(HashSet<ChunkPos>);
+#[derive(Resource, Default)]
+struct LoadedChunks {
+    all: HashSet<ChunkPos>,
+    player: HashSet<ChunkPos>,
+    camera: HashSet<ChunkPos>,
+}
 
 /// Mining platform sprite
 #[derive(Resource)]
@@ -215,7 +211,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
 fn spawn_map(
     mut commands: Commands,
     texture_handle: Res<MapTilesSprites>,
-    mut rendered_chunks: ResMut<LoadedChunks>,
+    mut loaded_chunks: ResMut<LoadedChunks>,
 ) {
     let mut chunks = Vec::new();
 
@@ -223,7 +219,7 @@ fn spawn_map(
         for y in 0..3 {
             let pos = IVec2::new(x, y);
             chunks.push(spawn_chunk(&mut commands, &texture_handle.0, pos, true));
-            rendered_chunks.0.insert(pos);
+            loaded_chunks.all.insert(pos);
         }
     }
 
@@ -365,36 +361,19 @@ fn switch_view(
     }
 }
 
-fn load_chunks_player(
-    mut commands: Commands,
-    mut player_loaded_chunks: ResMut<PlayerLoadedChunks>,
-) {
+fn load_chunks_player(mut commands: Commands, mut loaded_chunks: ResMut<LoadedChunks>) {
     todo!()
 }
 
-fn load_chunks_camera(
-    mut commands: Commands,
-    mut camera_loaded_chunks: ResMut<CameraLoadedChunks>,
-    player_loaded_chunks: Res<PlayerLoadedChunks>,
-) {
+fn load_chunks_camera(mut commands: Commands, mut loaded_chunks: ResMut<LoadedChunks>) {
     todo!()
 }
 
-fn load_chunks_npc(
-    mut commands: Commands,
-    mut loaded_chunks: ResMut<LoadedChunks>,
-    camera_loaded_chunks: Res<CameraLoadedChunks>,
-    player_loaded_chunks: Res<PlayerLoadedChunks>,
-) {
+fn load_chunks_npc(mut commands: Commands, mut loaded_chunks: ResMut<LoadedChunks>) {
     todo!()
 }
 
-fn chunk_unload(
-    mut commands: Commands,
-    mut chunks: ResMut<LoadedChunks>,
-    mut camera_chunks: ResMut<CameraLoadedChunks>,
-    mut player_chunks: ResMut<PlayerLoadedChunks>,
-) {
+fn chunk_unload(mut commands: Commands, mut loaded_chunks: ResMut<LoadedChunks>) {
     todo!()
 }
 
@@ -410,7 +389,7 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
         .insert_resource(CurrentView::Platform)
-        .insert_resource(LoadedChunks(HashSet::new()))
+        .insert_resource(LoadedChunks::default())
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
