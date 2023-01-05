@@ -131,7 +131,11 @@ fn camera_to_chunk_pos(camera_pos: Vec2) -> ChunkPos {
     let camera_pos = camera_pos.as_ivec2();
     let chunk_size = IVec2::new(TILEMAP_CHUNK_SIZE.x as i32, TILEMAP_CHUNK_SIZE.y as i32);
     let tile_size = IVec2::new(TILEMAP_TILE_SIZE.x as i32, TILEMAP_TILE_SIZE.y as i32);
-    camera_pos / (chunk_size * tile_size)
+    let chunk_size_in_units = chunk_size * tile_size;
+    IVec2::new(
+        camera_pos.x.div_euclid(chunk_size_in_units.x),
+        camera_pos.y.div_euclid(chunk_size_in_units.y),
+    )
 }
 
 fn spawn_camera(mut commands: Commands) {
