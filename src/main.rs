@@ -282,6 +282,7 @@ fn spawn_map(
     texture_handle: Res<MapTilesSprites>,
     mut loaded_chunks: ResMut<LoadedChunks>,
 ) {
+    /*
     let mut chunks = Vec::new();
 
     for x in 0..3 {
@@ -291,6 +292,7 @@ fn spawn_map(
             loaded_chunks.0.insert(pos);
         }
     }
+    */
 
     let player_marker = commands
         .spawn((
@@ -316,7 +318,7 @@ fn spawn_map(
                 ..default()
             },
         ))
-        .push_children(&chunks)
+        //.push_children(&chunks)
         .add_child(player_marker);
 }
 
