@@ -8,7 +8,7 @@ use bevy::{
     utils::HashSet,
     window::PresentMode,
 };
-use bevy_ecs_tilemap::prelude::{offset::RowEvenPos, *};
+use bevy_ecs_tilemap::prelude::{neighbors::HexRowDirection, offset::RowEvenPos, *};
 use bevy_prototype_lyon::prelude::*;
 use splines::{Interpolation, Key, Spline};
 
@@ -58,6 +58,25 @@ enum TileKind {
 #[derive(Component)]
 struct Chunk {
     pos: ChunkPos,
+}
+
+/// Position on a map, with track of how much progress is made through the map tile and what the
+/// next tile should be
+#[derive(Component, Debug, Clone, PartialEq)]
+struct MapPos {
+    pos: RowEvenPos,
+    current_direction: HexRowDirection,
+    target_direction: HexRowDirection,
+    reverse: bool,
+    progress: f32,
+}
+
+/// Used for pathfinding
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PlatformPos {
+    pos: RowEvenPos,
+    direction: HexRowDirection,
+    reverse: bool,
 }
 
 /// Chunks loaded by anything. Chunks not loaded by a player should not be rendered to avoid seeing
