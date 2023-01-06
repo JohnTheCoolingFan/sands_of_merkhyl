@@ -142,6 +142,9 @@ impl CurrentView {
 #[derive(Component)]
 struct Map;
 
+#[derive(Component)]
+struct MiningPlatform;
+
 fn chunk_and_local_from_global(global_pos: RowEvenPos) -> (ChunkPos, TilePos) {
     let chunk_pos = ChunkPos::new(
         global_pos.q.div_euclid(TILEMAP_CHUNK_SIZE.x as i32),
@@ -241,6 +244,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
             ..default()
         },
         MapPos::default(),
+        MiningPlatform,
     ));
     // For visualizing vehicle center on the ground level
     /*
@@ -333,7 +337,7 @@ fn spawn_chunk(
     tilemap_entity
 }
 
-fn update_texture(
+fn update_map_tiles_texture(
     mut tiles: Query<
         (
             &mut TileTextureIndex,
@@ -478,7 +482,7 @@ fn main() {
         .add_startup_system(spawn_map)
         .add_system(camera_movement)
         .add_system(switch_view)
-        .add_system(update_texture)
+        .add_system(update_map_tiles_texture)
         .add_system(load_chunks_player)
         .add_system(load_chunks_camera.after(load_chunks_player))
         .add_system(load_chunks_npc.after(load_chunks_camera))
