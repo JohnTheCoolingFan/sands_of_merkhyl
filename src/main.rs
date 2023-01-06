@@ -66,7 +66,7 @@ struct Chunk {
 struct MapPos {
     pos: RowEvenPos,
     current_direction: HexRowDirection,
-    target_direction: HexRowDirection,
+    target_direction: Option<HexRowDirection>,
     reverse: bool,
     progress: f32,
 }
@@ -76,7 +76,7 @@ impl Default for MapPos {
         Self {
             pos: RowEvenPos { q: 0, r: 0 },
             current_direction: HexRowDirection::East,
-            target_direction: HexRowDirection::East,
+            target_direction: None,
             reverse: false,
             progress: 0.5,
         }
@@ -101,7 +101,7 @@ struct PathfindingPos {
 }
 
 impl PathfindingPos {
-    fn successors(&self, constraints: MovementConstraints) -> Vec<Self> {
+    fn successors(&self, constraints: MovementConstraints) -> Vec<(Self, u32)> {
         todo!()
     }
 }
@@ -150,6 +150,12 @@ struct PlayerVehicle;
 
 #[derive(Component)]
 struct Npc;
+
+#[derive(Component)]
+struct PlayerMapMarker;
+
+#[derive(Component)]
+struct PlayerDirectionMapMarker;
 
 fn chunk_and_local_from_global(global_pos: RowEvenPos) -> (ChunkPos, TilePos) {
     let chunk_pos = ChunkPos::new(
@@ -282,6 +288,16 @@ fn spawn_map(
         }
     }
 
+    let player_marker = commands.spawn((PlayerMapMarker, GeometryBuilder::build_as(
+                &shapes::RegularPolygon {
+                    sides: 3,
+                    feature: shapes::RegularPolygonFeature::Radius(8.0),
+                    ..default()
+                },
+                DrawMode::Fill(FillMode::color(Color::rgb(0.0, 1.0, 0.0))),
+                Transform::from_xyz(0.0, 0.0, MAP_TILEMAP_Z + 10.0),
+                ))).id();
+
     commands
         .spawn((
             Map,
@@ -291,7 +307,8 @@ fn spawn_map(
                 ..default()
             },
         ))
-        .push_children(&chunks);
+        .push_children(&chunks)
+        .add_child(player_marker);
 }
 
 fn spawn_chunk(
