@@ -83,9 +83,12 @@ impl Default for MapPos {
     }
 }
 
+/// Specifies how something can move on a map
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum MovementConstraints {
+    /// No limitations, can go to any neighbouring tile, ignores reverse
     Free,
+    /// Can only go forward, left-forward or right-forward, or backwards when reversed
     Platform,
 }
 
@@ -98,7 +101,7 @@ struct PathfindingPos {
 }
 
 impl PathfindingPos {
-    fn next_positions(&self, constraints: MovementConstraints) -> Vec<Self> {
+    fn successors(&self, constraints: MovementConstraints) -> Vec<Self> {
         todo!()
     }
 }
