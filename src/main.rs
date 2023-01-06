@@ -145,6 +145,12 @@ struct Map;
 #[derive(Component)]
 struct MiningPlatform;
 
+#[derive(Component)]
+struct PlayerVehicle;
+
+#[derive(Component)]
+struct Npc;
+
 fn chunk_and_local_from_global(global_pos: RowEvenPos) -> (ChunkPos, TilePos) {
     let chunk_pos = ChunkPos::new(
         global_pos.q.div_euclid(TILEMAP_CHUNK_SIZE.x as i32),
@@ -245,6 +251,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
         },
         MapPos::default(),
         MiningPlatform,
+        PlayerVehicle,
     ));
     // For visualizing vehicle center on the ground level
     /*
