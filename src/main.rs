@@ -71,6 +71,18 @@ struct MapPos {
     progress: f32,
 }
 
+impl Default for MapPos {
+    fn default() -> Self {
+        Self {
+            pos: RowEvenPos { q: 0, r: 0 },
+            current_direction: HexRowDirection::East,
+            target_direction: HexRowDirection::East,
+            reverse: false,
+            progress: 0.5,
+        }
+    }
+}
+
 /// Used for pathfinding
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct PlatformPos {
@@ -203,15 +215,18 @@ fn spline_from_weights(weights: Vec<(TileKind, f32)>) -> Spline<f32, f32> {
 }
 
 fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
-    commands.spawn(SpriteBundle {
-        texture: sprite.0.clone(),
-        sprite: Sprite {
-            custom_size: Some(Vec2::from((48.0, 44.0))),
-            anchor: Anchor::Custom(Vec2::from((0.5 / 12.0, -1.5 / 11.0))),
+    commands.spawn((
+        SpriteBundle {
+            texture: sprite.0.clone(),
+            sprite: Sprite {
+                custom_size: Some(Vec2::from((48.0, 44.0))),
+                anchor: Anchor::Custom(Vec2::from((0.5 / 12.0, -1.5 / 11.0))),
+                ..default()
+            },
             ..default()
         },
-        ..default()
-    });
+        MapPos::default(),
+    ));
     // For visualizing vehicle center on the ground level
     /*
     commands.spawn(GeometryBuilder::build_as(
