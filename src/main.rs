@@ -2,13 +2,17 @@
 
 use bevy::{
     input::mouse::{MouseScrollUnit, MouseWheel},
+    math::Vec3Swizzles,
     prelude::*,
     render::camera::ScalingMode,
     sprite::Anchor,
     utils::HashSet,
     window::PresentMode,
 };
-use bevy_ecs_tilemap::{prelude::{offset::RowEvenPos, *}, helpers::hex_grid::neighbors::HexRowDirection};
+use bevy_ecs_tilemap::{
+    helpers::hex_grid::neighbors::HexRowDirection,
+    prelude::{offset::RowEvenPos, *},
+};
 use bevy_prototype_lyon::prelude::*;
 use splines::{Interpolation, Key, Spline};
 
@@ -21,12 +25,12 @@ const CHARTED_TILE_COLOR: TileColor = TileColor(Color::rgb(0.3, 0.3, 0.3));
 const MAP_TILEMAP_Z: f32 = 900.0;
 
 // Test and adjust
-const PLAYER_CHUNK_UNLOAD_DISTANCE: i32 = 5;
 const PLAYER_CHUNK_LOAD_DISTANCE: i32 = 3;
+const PLAYER_CHUNK_UNLOAD_DISTANCE: f32 = 5.0;
 const NPC_CHUNK_LOAD_DISTANCE: i32 = 1;
-const NPC_CHUNK_UNLOAD_DISTANCE: i32 = 2;
+const NPC_CHUNK_UNLOAD_DISTANCE: f32 = 2.0;
 const CAMERA_CHUNK_LOAD_DISTANCE: i32 = 5;
-const CAMERA_CHUNK_UNLOAD_DISTANCE: i32 = 10;
+const CAMERA_CHUNK_UNLOAD_DISTANCE: f32 = 10.0;
 
 const MAP_VIEW_SCALE: f32 = 1.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
@@ -288,7 +292,10 @@ fn spawn_map(
         }
     }
 
-    let player_marker = commands.spawn((PlayerMapMarker, GeometryBuilder::build_as(
+    let player_marker = commands
+        .spawn((
+            PlayerMapMarker,
+            GeometryBuilder::build_as(
                 &shapes::RegularPolygon {
                     sides: 3,
                     feature: shapes::RegularPolygonFeature::Radius(8.0),
@@ -296,7 +303,9 @@ fn spawn_map(
                 },
                 DrawMode::Fill(FillMode::color(Color::rgb(0.0, 1.0, 0.0))),
                 Transform::from_xyz(0.0, 0.0, MAP_TILEMAP_Z + 10.0),
-                ))).id();
+            ),
+        ))
+        .id();
 
     commands
         .spawn((
@@ -439,34 +448,118 @@ fn switch_view(
 
 fn load_chunks_player(
     mut commands: Commands,
+    player_vehicles: Query<&MapPos, With<PlayerVehicle>>,
     mut loaded_chunks: ResMut<LoadedChunks>,
     mut visible_chunks: ResMut<LoadedVisibleChunks>,
+    map_tile_texture: Res<MapTilesSprites>,
+    map_entity: Query<Entity, With<Map>>,
 ) {
-    todo!()
+    let map_entity = map_entity.single();
+    for player_pos in player_vehicles.iter() {
+        let player_chunk_pos = chunk_and_local_from_global(player_pos.pos).0;
+        for x in (player_chunk_pos.x - PLAYER_CHUNK_LOAD_DISTANCE)
+            ..=(player_chunk_pos.x + PLAYER_CHUNK_LOAD_DISTANCE)
+        {
+            for y in (player_chunk_pos.y - PLAYER_CHUNK_LOAD_DISTANCE)
+                ..=(player_chunk_pos.y + PLAYER_CHUNK_LOAD_DISTANCE)
+            {
+                let chunk_pos = IVec2::new(x, y);
+                if !loaded_chunks.0.contains(&chunk_pos) {
+                    let chunk_entity =
+                        spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, true);
+                    loaded_chunks.0.insert(chunk_pos);
+                    let mut map_entity_commands = commands.entity(map_entity);
+                    map_entity_commands.add_child(chunk_entity);
+                }
+                if !visible_chunks.0.contains(&chunk_pos) {
+                    visible_chunks.0.insert(chunk_pos);
+                }
+            }
+        }
+    }
 }
 
 fn load_chunks_camera(
     mut commands: Commands,
+    camera: Query<&Transform, With<Camera2d>>,
     mut loaded_chunks: ResMut<LoadedChunks>,
     mut visible_chunks: ResMut<LoadedVisibleChunks>,
+    map_tile_texture: Res<MapTilesSprites>,
+    map_entity: Query<Entity, With<Map>>,
 ) {
-    todo!()
+    let map_entity = map_entity.single();
+    let camera_transform = camera.single();
+    let camera_chunk_pos = camera_to_chunk_pos(camera_transform.translation.xy());
+    for x in (camera_chunk_pos.x - CAMERA_CHUNK_LOAD_DISTANCE)
+        ..=(camera_chunk_pos.x + CAMERA_CHUNK_LOAD_DISTANCE)
+    {
+        for y in (camera_chunk_pos.y - CAMERA_CHUNK_LOAD_DISTANCE)
+            ..=(camera_chunk_pos.y + CAMERA_CHUNK_LOAD_DISTANCE)
+        {
+            let chunk_pos = IVec2::new(x, y);
+            if !loaded_chunks.0.contains(&chunk_pos) {
+                let chunk_entity = spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, true);
+                loaded_chunks.0.insert(chunk_pos);
+                let mut map_entity_commands = commands.entity(map_entity);
+                map_entity_commands.add_child(chunk_entity);
+            }
+            if !visible_chunks.0.contains(&chunk_pos) {
+                visible_chunks.0.insert(chunk_pos);
+            }
+        }
+    }
 }
 
 fn load_chunks_npc(
     mut commands: Commands,
+    npcs: Query<&MapPos, With<Npc>>,
     mut loaded_chunks: ResMut<LoadedChunks>,
-    mut visible_chunks: ResMut<LoadedVisibleChunks>,
+    map_tile_texture: Res<MapTilesSprites>,
+    map_entity: Query<Entity, With<Map>>,
 ) {
-    todo!()
+    let map_entity = map_entity.single();
+    for npc_map_pos in npcs.iter() {
+        let npc_chunk_pos = chunk_and_local_from_global(npc_map_pos.pos).0;
+        for x in (npc_chunk_pos.x - NPC_CHUNK_LOAD_DISTANCE)
+            ..=(npc_chunk_pos.x + NPC_CHUNK_LOAD_DISTANCE)
+        {
+            for y in (npc_chunk_pos.y - NPC_CHUNK_LOAD_DISTANCE)
+                ..=(npc_chunk_pos.y + NPC_CHUNK_LOAD_DISTANCE)
+            {
+                let chunk_pos = IVec2::new(x, y);
+                if !loaded_chunks.0.contains(&chunk_pos) {
+                    let chunk_entity =
+                        spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, false);
+                    loaded_chunks.0.insert(chunk_pos);
+                    let mut map_entity_commands = commands.entity(map_entity);
+                    map_entity_commands.add_child(chunk_entity);
+                }
+            }
+        }
+    }
 }
 
 fn chunk_unload(
     mut commands: Commands,
+    player_vehicles: Query<&MapPos, With<PlayerVehicle>>,
+    camera: Query<&Transform, With<Camera2d>>,
+    npcs: Query<&MapPos, With<Npc>>,
+    chunks: Query<(Entity, &Chunk)>,
     mut loaded_chunks: ResMut<LoadedChunks>,
     mut visible_chunks: ResMut<LoadedVisibleChunks>,
 ) {
-    todo!()
+    for (chunk_entity, Chunk { pos: chunk_pos }) in chunks.iter() {
+        let mut player_distances = player_vehicles.iter().map(|mp| (chunk_and_local_from_global(mp.pos).0 - *chunk_pos).as_vec2().length());
+        let camera_distance = (camera_to_chunk_pos(camera.single().translation.xy()) - *chunk_pos).as_vec2().length();
+        let mut npcs_distances = npcs.iter().map(|mp| (chunk_and_local_from_global(mp.pos).0 - *chunk_pos).as_vec2().length());
+        if !(player_distances.any(|d| d < PLAYER_CHUNK_UNLOAD_DISTANCE) || camera_distance < CAMERA_CHUNK_UNLOAD_DISTANCE) {
+            visible_chunks.0.remove(chunk_pos);
+        }
+        if !(player_distances.any(|d| d< PLAYER_CHUNK_UNLOAD_DISTANCE) || camera_distance < CAMERA_CHUNK_UNLOAD_DISTANCE || npcs_distances.any(|d| d < NPC_CHUNK_UNLOAD_DISTANCE)) {
+            commands.entity(chunk_entity).despawn_recursive();
+            loaded_chunks.0.remove(chunk_pos);
+        }
+    }
 }
 
 fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
