@@ -360,19 +360,35 @@ fn switch_view(
     }
 }
 
-fn load_chunks_player(mut commands: Commands, mut loaded_chunks: ResMut<LoadedChunks>) {
+fn load_chunks_player(
+    mut commands: Commands,
+    mut loaded_chunks: ResMut<LoadedChunks>,
+    mut visible_chunks: ResMut<LoadedVisibleChunks>,
+) {
     todo!()
 }
 
-fn load_chunks_camera(mut commands: Commands, mut loaded_chunks: ResMut<LoadedChunks>) {
+fn load_chunks_camera(
+    mut commands: Commands,
+    mut loaded_chunks: ResMut<LoadedChunks>,
+    mut visible_chunks: ResMut<LoadedVisibleChunks>,
+) {
     todo!()
 }
 
-fn load_chunks_npc(mut commands: Commands, mut loaded_chunks: ResMut<LoadedChunks>) {
+fn load_chunks_npc(
+    mut commands: Commands,
+    mut loaded_chunks: ResMut<LoadedChunks>,
+    mut visible_chunks: ResMut<LoadedVisibleChunks>,
+) {
     todo!()
 }
 
-fn chunk_unload(mut commands: Commands, mut loaded_chunks: ResMut<LoadedChunks>) {
+fn chunk_unload(
+    mut commands: Commands,
+    mut loaded_chunks: ResMut<LoadedChunks>,
+    mut visible_chunks: ResMut<LoadedVisibleChunks>,
+) {
     todo!()
 }
 
