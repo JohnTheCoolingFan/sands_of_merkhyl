@@ -304,7 +304,7 @@ fn spawn_map(
                     ..default()
                 },
                 DrawMode::Fill(FillMode::color(Color::rgb(0.0, 1.0, 0.0))),
-                Transform::from_xyz(0.0, 0.0, MAP_TILEMAP_Z + 10.0),
+                Transform::from_xyz(0.0, 0.0, 10.0),
             ),
         ))
         .id();
