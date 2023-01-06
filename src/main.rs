@@ -8,7 +8,7 @@ use bevy::{
     utils::HashSet,
     window::PresentMode,
 };
-use bevy_ecs_tilemap::prelude::{neighbors::HexRowDirection, offset::RowEvenPos, *};
+use bevy_ecs_tilemap::{prelude::{offset::RowEvenPos, *}, helpers::hex_grid::neighbors::HexRowDirection};
 use bevy_prototype_lyon::prelude::*;
 use splines::{Interpolation, Key, Spline};
 
