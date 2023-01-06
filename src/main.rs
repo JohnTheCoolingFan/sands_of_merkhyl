@@ -83,12 +83,24 @@ impl Default for MapPos {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MovementConstraints {
+    Free,
+    Platform,
+}
+
 /// Used for pathfinding
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct PlatformPos {
+struct PathfindingPos {
     pos: RowEvenPos,
     direction: HexRowDirection,
     reverse: bool,
+}
+
+impl PathfindingPos {
+    fn next_positions(&self, constraints: MovementConstraints) -> Vec<Self> {
+        todo!()
+    }
 }
 
 /// Chunks loaded by anything. Chunks not loaded by a player should not be rendered to avoid seeing
