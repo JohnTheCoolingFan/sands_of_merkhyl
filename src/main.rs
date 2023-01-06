@@ -66,7 +66,7 @@ struct Chunk {
 struct LoadedChunks(HashSet<ChunkPos>);
 
 #[derive(Resource, Default)]
-struct LoadedInvisibleChunks(HashSet<ChunkPos>);
+struct LoadedVisibleChunks(HashSet<ChunkPos>);
 
 /// Mining platform sprite
 #[derive(Resource)]
@@ -389,7 +389,7 @@ fn main() {
         .insert_resource(ClearColor(CLEAR_COLOR))
         .insert_resource(CurrentView::Platform)
         .insert_resource(LoadedChunks::default())
-        .insert_resource(LoadedInvisibleChunks::default())
+        .insert_resource(LoadedVisibleChunks::default())
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
