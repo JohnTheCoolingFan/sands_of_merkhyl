@@ -17,6 +17,7 @@ use bevy_prototype_lyon::prelude::*;
 use splines::{Interpolation, Key, Spline};
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
+const WINDOW_HEIGHT: f32 = 900.0;
 
 const CLEAR_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
 const VISIBLE_TILE_COLOR: TileColor = TileColor(Color::rgb(1.0, 1.0, 1.0));
@@ -572,7 +573,6 @@ fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
 }
 
 fn main() {
-    let height = 900.0;
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
         .insert_resource(CurrentView::Platform)
@@ -584,8 +584,8 @@ fn main() {
                     window: WindowDescriptor {
                         title: "Desert Stranding".to_string(),
                         present_mode: PresentMode::Fifo,
-                        height,
-                        width: height * ASPECT_RATIO,
+                        height: WINDOW_HEIGHT,
+                        width: WINDOW_HEIGHT * ASPECT_RATIO,
                         resizable: false,
                         ..default()
                     },
