@@ -26,7 +26,7 @@ const CHARTED_TILE_COLOR: TileColor = TileColor(Color::rgb(0.3, 0.3, 0.3));
 
 const MAP_TILEMAP_Z: f32 = 900.0;
 
-const MAP_VIEW_SCALE: f32 = 1.0;
+const MAP_VIEW_SCALE: f32 = 30.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
 
 type ChunkPos = IVec2;
