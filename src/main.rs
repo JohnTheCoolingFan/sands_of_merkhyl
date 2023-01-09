@@ -27,11 +27,11 @@ const MAP_TILEMAP_Z: f32 = 900.0;
 
 // Test and adjust
 const PLAYER_CHUNK_LOAD_DISTANCE: i32 = 3;
-const PLAYER_CHUNK_UNLOAD_DISTANCE: f32 = 5.0;
+const PLAYER_CHUNK_UNLOAD_DISTANCE: i32 = 5;
 const NPC_CHUNK_LOAD_DISTANCE: i32 = 1;
-const NPC_CHUNK_UNLOAD_DISTANCE: f32 = 2.0;
+const NPC_CHUNK_UNLOAD_DISTANCE: i32 = 2;
 const CAMERA_CHUNK_LOAD_DISTANCE: i32 = 5;
-const CAMERA_CHUNK_UNLOAD_DISTANCE: f32 = 10.0;
+const CAMERA_CHUNK_UNLOAD_DISTANCE: i32 = 10;
 
 const MAP_VIEW_SCALE: f32 = 1.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
@@ -199,14 +199,13 @@ fn chunk_center_position(pos: ChunkPos) -> Vec2 {
 }
 
 fn camera_to_chunk_pos(camera_pos: Vec2) -> ChunkPos {
-    let camera_pos = camera_pos.as_ivec2();
-    let chunk_size = IVec2::new(TILEMAP_CHUNK_SIZE.x as i32, TILEMAP_CHUNK_SIZE.y as i32);
-    let tile_size = IVec2::new(TILEMAP_TILE_SIZE.x as i32, TILEMAP_TILE_SIZE.y as i32);
-    let chunk_size_in_units = chunk_size * tile_size;
-    IVec2::new(
-        camera_pos.x.div_euclid(chunk_size_in_units.x),
-        camera_pos.y.div_euclid(chunk_size_in_units.y),
-    )
+    let global_pos = RowEvenPos::from_world_pos(&camera_pos, &TILEMAP_GRID_SIZE);
+    chunk_and_local_from_global(global_pos).0
+}
+
+fn is_chunk_in_radius(origin: ChunkPos, target: ChunkPos, radius: i32) -> bool {
+    ((origin.x - radius)..=(origin.x + radius)).contains(&target.x)
+        && ((origin.y - radius)..=(origin.y + radius)).contains(&target.y)
 }
 
 fn spawn_camera(mut commands: Commands) {
@@ -348,8 +347,9 @@ fn spawn_chunk(
                 },
                 TileVisibility::Visible, // TODO
                 TileKind::Empty,
-            ));
-            tile_storage.set(&pos, tile_entity.id());
+            )).id();
+            commands.entity(tilemap_entity).add_child(tile_entity);
+            tile_storage.set(&pos, tile_entity);
         }
     }
 
@@ -552,13 +552,34 @@ fn chunk_unload(
     mut visible_chunks: ResMut<LoadedVisibleChunks>,
 ) {
     for (chunk_entity, Chunk { pos: chunk_pos }) in chunks.iter() {
-        let mut player_distances = player_vehicles.iter().map(|mp| (chunk_and_local_from_global(mp.pos).0 - *chunk_pos).as_vec2().length());
-        let camera_distance = (camera_to_chunk_pos(camera.single().translation.xy()) - *chunk_pos).as_vec2().length();
-        let mut npcs_distances = npcs.iter().map(|mp| (chunk_and_local_from_global(mp.pos).0 - *chunk_pos).as_vec2().length());
-        if !(player_distances.any(|d| d < PLAYER_CHUNK_UNLOAD_DISTANCE) || camera_distance < CAMERA_CHUNK_UNLOAD_DISTANCE) {
+        let mut player_chunk_positions = player_vehicles
+            .iter()
+            .map(|mp| chunk_and_local_from_global(mp.pos).0 - *chunk_pos);
+        let camera_chunk_position =
+            camera_to_chunk_pos(camera.single().translation.xy()) - *chunk_pos;
+        let mut npcs_chunk_positions = npcs
+            .iter()
+            .map(|mp| chunk_and_local_from_global(mp.pos).0 - *chunk_pos);
+        if !(player_chunk_positions
+            .any(|p| is_chunk_in_radius(p, *chunk_pos, PLAYER_CHUNK_UNLOAD_DISTANCE))
+            || is_chunk_in_radius(
+                camera_chunk_position,
+                *chunk_pos,
+                CAMERA_CHUNK_UNLOAD_DISTANCE,
+            ))
+        {
             visible_chunks.0.remove(chunk_pos);
         }
-        if !(player_distances.any(|d| d< PLAYER_CHUNK_UNLOAD_DISTANCE) || camera_distance < CAMERA_CHUNK_UNLOAD_DISTANCE || npcs_distances.any(|d| d < NPC_CHUNK_UNLOAD_DISTANCE)) {
+        if !(player_chunk_positions
+            .any(|p| is_chunk_in_radius(p, *chunk_pos, PLAYER_CHUNK_UNLOAD_DISTANCE))
+            || is_chunk_in_radius(
+                camera_chunk_position,
+                *chunk_pos,
+                CAMERA_CHUNK_UNLOAD_DISTANCE,
+            )
+            || npcs_chunk_positions
+                .any(|p| is_chunk_in_radius(p, *chunk_pos, NPC_CHUNK_UNLOAD_DISTANCE)))
+        {
             commands.entity(chunk_entity).despawn_recursive();
             loaded_chunks.0.remove(chunk_pos);
         }
