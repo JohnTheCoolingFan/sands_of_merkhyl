@@ -317,9 +317,9 @@ fn switch_view(
 }
 
 fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
-    let mining_platform_sprite = assets.load("mining_platform.png");
+    let mining_platform_sprite = assets.load("mining_platform.dds");
     commands.insert_resource(MiningPlatformSprite(mining_platform_sprite));
-    let tile_texture = assets.load("map_tiles.png");
+    let tile_texture = assets.load("map_tiles.dds");
     commands.insert_resource(MapTilesSprites(tile_texture));
 }
 
