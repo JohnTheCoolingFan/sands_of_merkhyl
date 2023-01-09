@@ -554,12 +554,12 @@ fn chunk_unload(
     for (chunk_entity, Chunk { pos: chunk_pos }) in chunks.iter() {
         let mut player_chunk_positions = player_vehicles
             .iter()
-            .map(|mp| chunk_and_local_from_global(mp.pos).0 - *chunk_pos);
+            .map(|mp| chunk_and_local_from_global(mp.pos).0);
         let camera_chunk_position =
-            camera_to_chunk_pos(camera.single().translation.xy()) - *chunk_pos;
+            camera_to_chunk_pos(camera.single().translation.xy());
         let mut npcs_chunk_positions = npcs
             .iter()
-            .map(|mp| chunk_and_local_from_global(mp.pos).0 - *chunk_pos);
+            .map(|mp| chunk_and_local_from_global(mp.pos).0);
         if !(player_chunk_positions
             .any(|p| is_chunk_in_radius(p, *chunk_pos, PLAYER_CHUNK_UNLOAD_DISTANCE))
             || is_chunk_in_radius(
