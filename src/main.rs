@@ -13,6 +13,7 @@ use bevy_ecs_tilemap::{
 };
 use bevy_prototype_lyon::prelude::*;
 use chunk_management::ChunkManagementPlugin;
+use rand::prelude::*;
 use splines::{Interpolation, Key, Spline};
 
 mod chunk_management;
@@ -51,6 +52,11 @@ enum TileKind {
 #[derive(Component)]
 struct Chunk {
     pos: ChunkPos,
+}
+
+#[derive(Resource)]
+struct WorldSeed {
+    seed: [u8; 32],
 }
 
 /// Position on a map, with track of how much progress is made through the map tile and what the
@@ -323,6 +329,13 @@ fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
     commands.insert_resource(MapTilesSprites(tile_texture));
 }
 
+fn generate_world_seed(mut commands: Commands) {
+    let mut seed: [u8; 32] = thread_rng().gen();
+    seed[(32 - 8)..].copy_from_slice(&[0; 8]);
+    println!("World seed is {:02X?}", seed);
+    commands.insert_resource(WorldSeed { seed });
+}
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
@@ -346,6 +359,7 @@ fn main() {
         .add_plugin(TilemapPlugin)
         .add_plugin(ChunkManagementPlugin)
         .add_startup_system_to_stage(StartupStage::PreStartup, load_assets)
+        .add_startup_system(generate_world_seed)
         .add_startup_system(spawn_platform)
         .add_startup_system(spawn_camera)
         .add_startup_system(spawn_map)
