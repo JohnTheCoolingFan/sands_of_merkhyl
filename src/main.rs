@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
     render::camera::ScalingMode,
     sprite::Anchor,
-    utils::FloatOrd,
+    utils::{FloatOrd, HashMap},
     window::PresentMode,
 };
 use bevy_ecs_tilemap::{
@@ -58,6 +58,11 @@ struct Chunk {
 #[derive(Resource)]
 struct WorldSeed {
     seed: [u8; 32],
+}
+
+#[derive(Resource)]
+struct GeneratedChunks {
+    chunks: HashMap<ChunkPos, [[TileKind; 32]; 32]>,
 }
 
 /// Position on a map, with track of how much progress is made through the map tile and what the
