@@ -8,8 +8,9 @@ edition = "2021"
 [dependencies]
 bevy_prototype_lyon = "0.7"
 bevy_ecs_tilemap = "0.9"
-rand = "0.8"
+rand = { version = "0.8", features = ["small_rng"] }
 splines = { version = "4.1", features = ["glam"] }
+rangemap = "1.3"
 
 [dependencies.bevy]
 version = "0.9"
