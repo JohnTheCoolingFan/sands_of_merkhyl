@@ -60,7 +60,7 @@ struct WorldSeed {
     seed: [u8; 32],
 }
 
-#[derive(Resource)]
+#[derive(Resource, Debug, Clone, Default)]
 struct GeneratedChunks {
     chunks: HashMap<ChunkPos, [[TileKind; 32]; 32]>,
 }
