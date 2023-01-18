@@ -345,7 +345,7 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     window: WindowDescriptor {
-                        title: "Desert Stranding".to_string(),
+                        title: "Sun never sets on the sands of Merkhyl".to_string(),
                         present_mode: PresentMode::Fifo,
                         height: WINDOW_HEIGHT,
                         width: WINDOW_HEIGHT * ASPECT_RATIO,
