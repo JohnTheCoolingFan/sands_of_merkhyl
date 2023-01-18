@@ -346,6 +346,7 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
         .insert_resource(CurrentView::Platform)
+        .insert_resource(GeneratedChunks::default())
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
