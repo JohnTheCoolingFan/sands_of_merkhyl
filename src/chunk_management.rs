@@ -148,7 +148,7 @@ fn spawn_chunk(
                         color: TileColor::default(),
                         old_position: TilePosOld::default(),
                     },
-                    TileVisibility::Visible, // TODO
+                    TileVisibility::Unknown,
                     chunk_data[x as usize][y as usize]
                 ))
                 .id();
