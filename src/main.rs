@@ -244,10 +244,10 @@ fn update_map_tiles_texture(
         } else {
             (*kind as u8).into()
         };
-        if matches!(visibility, TileVisibility::Charted) {
-            *color = CHARTED_TILE_COLOR
-        } else {
+        if matches!(visibility, TileVisibility::Visible) {
             *color = VISIBLE_TILE_COLOR
+        } else {
+            *color = CHARTED_TILE_COLOR
         };
     }
 }
