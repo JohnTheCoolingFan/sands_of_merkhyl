@@ -165,7 +165,27 @@ fn spawn_camera(mut commands: Commands) {
 
     camera.projection.scaling_mode = ScalingMode::None;
 
-    commands.spawn(camera);
+    commands
+        .spawn((
+            camera,
+            VisibilityBundle {
+                visibility: Visibility { is_visible: false },
+                computed: ComputedVisibility::default(),
+            },
+        ))
+        .with_children(|cb| {
+            cb.spawn(GeometryBuilder::build_as(
+                &shapes::Rectangle {
+                    extents: Vec2 {
+                        x: 1000.0,
+                        y: 1000.0,
+                    },
+                    origin: RectangleOrigin::Center,
+                },
+                DrawMode::Fill(FillMode::color(CLEAR_COLOR)),
+                Transform::from_xyz(0.0, 0.0, -300.0),
+            ));
+        });
 }
 
 fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
@@ -280,7 +300,7 @@ fn camera_movement(
 
 fn switch_view(
     input: Res<Input<KeyCode>>,
-    mut camera: Query<(&mut OrthographicProjection, &mut Transform), With<Camera2d>>,
+    mut camera: Query<(&mut OrthographicProjection, &mut Transform, &mut Visibility), With<Camera2d>>,
     mut map: Query<&mut Visibility, (With<Map>, Without<Camera2d>)>,
     mut current_view: ResMut<CurrentView>,
 ) {
@@ -289,13 +309,15 @@ fn switch_view(
         match *current_view {
             CurrentView::Map => {
                 map.single_mut().is_visible = true;
-                let (mut projection, mut cam_transform) = camera.single_mut();
+                let (mut projection, mut cam_transform, mut cam_visibility) = camera.single_mut();
+                cam_visibility.is_visible = true;
                 projection.scale = MAP_VIEW_SCALE;
                 cam_transform.translation = Vec2::new(0.0, 0.0).extend(cam_transform.translation.z);
             }
             CurrentView::Platform => {
                 map.single_mut().is_visible = false;
-                let (mut projection, mut cam_transform) = camera.single_mut();
+                let (mut projection, mut cam_transform, mut cam_visibility) = camera.single_mut();
+                cam_visibility.is_visible = false;
                 projection.scale = PLATFORM_VIEW_SCALE;
                 cam_transform.translation = Vec2::new(0.0, 6.0).extend(cam_transform.translation.z);
             }
