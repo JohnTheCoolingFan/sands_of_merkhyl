@@ -33,6 +33,9 @@ const PLATFORM_VIEW_SCALE: f32 = 25.0;
 
 type ChunkPos = IVec2;
 
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+struct ChartRange(u32);
+
 /// How visible (to player) tile is
 #[derive(Component, Debug, Clone, Copy)]
 enum TileVisibility {
@@ -179,6 +182,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
         MapPos::default(),
         MiningPlatform,
         PlayerVehicle,
+        ChartRange(2),
     ));
     // For visualizing vehicle center on the ground level
     /*
