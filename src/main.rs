@@ -60,11 +60,6 @@ struct WorldSeed {
     seed: [u8; 32],
 }
 
-#[derive(Resource, Debug, Clone, Default)]
-struct GeneratedChunks {
-    chunks: HashMap<ChunkPos, [[TileKind; 32]; 32]>,
-}
-
 /// Position on a map, with track of how much progress is made through the map tile and what the
 /// next tile should be
 #[derive(Component, Debug, Clone, PartialEq)]
@@ -168,30 +163,6 @@ fn spawn_camera(mut commands: Commands) {
     camera.projection.scaling_mode = ScalingMode::None;
 
     commands.spawn(camera);
-}
-
-fn rangemap_from_weights(weights: Vec<(TileKind, f32)>) -> RangeMap<FloatOrd, TileKind> {
-    let weights_sum: f32 = weights.iter().map(|(_, w)| w).sum();
-    let mut weight_so_far: f32 = 0.0;
-    weights
-        .into_iter()
-        .map(|(k, w)| {
-            let range =
-                FloatOrd(weight_so_far / weights_sum)..FloatOrd((weight_so_far + w) / weights_sum);
-            weight_so_far += w;
-            (range, k)
-        })
-        .collect()
-}
-
-fn generate_chunk(world_seed: &[u8; 32], chunk_pos: ChunkPos) -> [[TileKind; 32]; 32] {
-    let mut chunk_seed = *world_seed;
-    chunk_seed[24..29].copy_from_slice(&chunk_pos.x.to_le_bytes());
-    chunk_seed[28..32].copy_from_slice(&chunk_pos.y.to_le_bytes());
-    let mut rng = SmallRng::from_seed(chunk_seed);
-    let generated_values: [[f32; 32]; 32] = rng.gen();
-    let rangemap = rangemap_from_weights(vec![(TileKind::Empty, 90.0), (TileKind::Village, 10.0)]);
-    generated_values.map(|row| row.map(|v| *rangemap.get(&FloatOrd(v)).unwrap()))
 }
 
 fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
@@ -346,7 +317,6 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
         .insert_resource(CurrentView::Platform)
-        .insert_resource(GeneratedChunks::default())
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {

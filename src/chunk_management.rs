@@ -1,8 +1,17 @@
+#![allow(clippy::too_many_arguments)]
+
 use super::{
     Chunk, ChunkPos, Map, MapPos, MapTilesSprites, Npc, PlayerVehicle, TileKind, TileVisibility,
+    WorldSeed,
 };
-use bevy::{math::Vec3Swizzles, prelude::*, utils::HashSet};
+use bevy::{
+    math::Vec3Swizzles,
+    prelude::*,
+    utils::{FloatOrd, HashMap, HashSet},
+};
 use bevy_ecs_tilemap::{helpers::hex_grid::offset::RowEvenPos, prelude::*};
+use rand::prelude::*;
+use rangemap::RangeMap;
 
 // Test and adjust
 const PLAYER_CHUNK_LOAD_DISTANCE: i32 = 3;
@@ -23,6 +32,7 @@ impl Plugin for ChunkManagementPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(LoadedChunks::default())
             .insert_resource(LoadedVisibleChunks::default())
+            .insert_resource(GeneratedChunks::default())
             .add_system(load_chunks_player)
             .add_system(load_chunks_camera.after(load_chunks_player))
             .add_system(load_chunks_npc.after(load_chunks_camera))
@@ -37,6 +47,35 @@ struct LoadedChunks(HashSet<ChunkPos>);
 
 #[derive(Resource, Default)]
 struct LoadedVisibleChunks(HashSet<ChunkPos>);
+
+#[derive(Resource, Debug, Clone, Default)]
+struct GeneratedChunks {
+    chunks: HashMap<ChunkPos, [[TileKind; 32]; 32]>,
+}
+
+fn rangemap_from_weights(weights: Vec<(TileKind, f32)>) -> RangeMap<FloatOrd, TileKind> {
+    let weights_sum: f32 = weights.iter().map(|(_, w)| w).sum();
+    let mut weight_so_far: f32 = 0.0;
+    weights
+        .into_iter()
+        .map(|(k, w)| {
+            let range =
+                FloatOrd(weight_so_far / weights_sum)..FloatOrd((weight_so_far + w) / weights_sum);
+            weight_so_far += w;
+            (range, k)
+        })
+        .collect()
+}
+
+fn generate_chunk(world_seed: &[u8; 32], chunk_pos: ChunkPos) -> [[TileKind; 32]; 32] {
+    let mut chunk_seed = *world_seed;
+    chunk_seed[24..28].copy_from_slice(&chunk_pos.x.to_le_bytes());
+    chunk_seed[28..32].copy_from_slice(&chunk_pos.y.to_le_bytes());
+    let mut rng = SmallRng::from_seed(chunk_seed);
+    let generated_values: [[f32; 32]; 32] = rng.gen();
+    let rangemap = rangemap_from_weights(vec![(TileKind::Empty, 90.0), (TileKind::Village, 10.0)]);
+    generated_values.map(|row| row.map(|v| *rangemap.get(&FloatOrd(v)).unwrap()))
+}
 
 pub fn chunk_and_local_from_global(global_pos: RowEvenPos) -> (ChunkPos, TilePos) {
     let chunk_pos = ChunkPos::new(
@@ -89,6 +128,7 @@ fn spawn_chunk(
     texture_handle: &Handle<Image>,
     pos: ChunkPos,
     visible: bool,
+    chunk_data: &[[TileKind; 32]; 32],
 ) -> Entity {
     let mut tile_storage = TileStorage::empty(TILEMAP_CHUNK_SIZE);
     let tilemap_entity = commands.spawn_empty().id();
@@ -109,7 +149,7 @@ fn spawn_chunk(
                         old_position: TilePosOld::default(),
                     },
                     TileVisibility::Visible, // TODO
-                    TileKind::Empty,
+                    chunk_data[x as usize][y as usize]
                 ))
                 .id();
             commands.entity(tilemap_entity).add_child(tile_entity);
@@ -144,6 +184,8 @@ fn load_chunks_player(
     mut visible_chunks: ResMut<LoadedVisibleChunks>,
     map_tile_texture: Res<MapTilesSprites>,
     map_entity: Query<Entity, With<Map>>,
+    mut generated_chunks: ResMut<GeneratedChunks>,
+    world_seed: Res<WorldSeed>,
 ) {
     let map_entity = map_entity.single();
     for player_pos in player_vehicles.iter() {
@@ -156,8 +198,17 @@ fn load_chunks_player(
             {
                 let chunk_pos = IVec2::new(x, y);
                 if !loaded_chunks.0.contains(&chunk_pos) {
-                    let chunk_entity =
-                        spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, true);
+                    let chunk_data = generated_chunks
+                        .chunks
+                        .entry(chunk_pos)
+                        .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
+                    let chunk_entity = spawn_chunk(
+                        &mut commands,
+                        &map_tile_texture.0,
+                        chunk_pos,
+                        true,
+                        chunk_data,
+                    );
                     loaded_chunks.0.insert(chunk_pos);
                     let mut map_entity_commands = commands.entity(map_entity);
                     map_entity_commands.add_child(chunk_entity);
@@ -177,6 +228,8 @@ fn load_chunks_camera(
     mut visible_chunks: ResMut<LoadedVisibleChunks>,
     map_tile_texture: Res<MapTilesSprites>,
     map_entity: Query<Entity, With<Map>>,
+    mut generated_chunks: ResMut<GeneratedChunks>,
+    world_seed: Res<WorldSeed>,
 ) {
     let map_entity = map_entity.single();
     let camera_transform = camera.single();
@@ -189,7 +242,17 @@ fn load_chunks_camera(
         {
             let chunk_pos = IVec2::new(x, y);
             if !loaded_chunks.0.contains(&chunk_pos) {
-                let chunk_entity = spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, true);
+                let chunk_data = generated_chunks
+                    .chunks
+                    .entry(chunk_pos)
+                    .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
+                let chunk_entity = spawn_chunk(
+                    &mut commands,
+                    &map_tile_texture.0,
+                    chunk_pos,
+                    true,
+                    chunk_data,
+                );
                 loaded_chunks.0.insert(chunk_pos);
                 let mut map_entity_commands = commands.entity(map_entity);
                 map_entity_commands.add_child(chunk_entity);
@@ -207,6 +270,8 @@ fn load_chunks_npc(
     mut loaded_chunks: ResMut<LoadedChunks>,
     map_tile_texture: Res<MapTilesSprites>,
     map_entity: Query<Entity, With<Map>>,
+    mut generated_chunks: ResMut<GeneratedChunks>,
+    world_seed: Res<WorldSeed>,
 ) {
     let map_entity = map_entity.single();
     for npc_map_pos in npcs.iter() {
@@ -219,8 +284,17 @@ fn load_chunks_npc(
             {
                 let chunk_pos = IVec2::new(x, y);
                 if !loaded_chunks.0.contains(&chunk_pos) {
-                    let chunk_entity =
-                        spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, false);
+                    let chunk_data = generated_chunks
+                        .chunks
+                        .entry(chunk_pos)
+                        .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
+                    let chunk_entity = spawn_chunk(
+                        &mut commands,
+                        &map_tile_texture.0,
+                        chunk_pos,
+                        false,
+                        chunk_data,
+                    );
                     loaded_chunks.0.insert(chunk_pos);
                     let mut map_entity_commands = commands.entity(map_entity);
                     map_entity_commands.add_child(chunk_entity);
