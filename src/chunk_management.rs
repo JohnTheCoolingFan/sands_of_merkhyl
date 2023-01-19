@@ -73,7 +73,7 @@ fn generate_chunk(world_seed: &[u8; 32], chunk_pos: ChunkPos) -> [[TileKind; 32]
     chunk_seed[28..32].copy_from_slice(&chunk_pos.y.to_le_bytes());
     let mut rng = SmallRng::from_seed(chunk_seed);
     let generated_values: [[f32; 32]; 32] = rng.gen();
-    let rangemap = rangemap_from_weights(vec![(TileKind::Empty, 90.0), (TileKind::Village, 10.0)]);
+    let rangemap = rangemap_from_weights(vec![(TileKind::Empty, 200.0), (TileKind::Village, 5.0)]);
     generated_values.map(|row| row.map(|v| *rangemap.get(&FloatOrd(v)).unwrap()))
 }
 
