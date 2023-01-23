@@ -5,7 +5,6 @@ use super::{
     WorldSeed,
 };
 use bevy::{
-    math::Vec3Swizzles,
     prelude::*,
     utils::{FloatOrd, HashMap, HashSet},
 };
@@ -18,8 +17,6 @@ const PLAYER_CHUNK_LOAD_DISTANCE: i32 = 3;
 const PLAYER_CHUNK_UNLOAD_DISTANCE: i32 = 5;
 const NPC_CHUNK_LOAD_DISTANCE: i32 = 1;
 const NPC_CHUNK_UNLOAD_DISTANCE: i32 = 2;
-const CAMERA_CHUNK_LOAD_DISTANCE: i32 = 5;
-const CAMERA_CHUNK_UNLOAD_DISTANCE: i32 = 10;
 
 pub const TILEMAP_CHUNK_SIZE: TilemapSize = TilemapSize { x: 32, y: 32 };
 pub const TILEMAP_TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 28.0, y: 32.0 };
@@ -31,11 +28,9 @@ pub struct ChunkManagementPlugin;
 impl Plugin for ChunkManagementPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(LoadedChunks::default())
-            .insert_resource(LoadedVisibleChunks::default())
             .insert_resource(GeneratedChunks::default())
             .add_system(load_chunks_player)
-            .add_system(load_chunks_camera.after(load_chunks_player))
-            .add_system(load_chunks_npc.after(load_chunks_camera))
+            .add_system(load_chunks_npc.after(load_chunks_player))
             .add_system(chunk_unload.after(load_chunks_npc));
     }
 }
@@ -44,9 +39,6 @@ impl Plugin for ChunkManagementPlugin {
 /// where npcs are
 #[derive(Resource, Default)]
 struct LoadedChunks(HashSet<ChunkPos>);
-
-#[derive(Resource, Default)]
-struct LoadedVisibleChunks(HashSet<ChunkPos>);
 
 #[derive(Resource, Debug, Clone, Default)]
 struct GeneratedChunks {
@@ -127,7 +119,6 @@ fn spawn_chunk(
     commands: &mut Commands,
     texture_handle: &Handle<Image>,
     pos: ChunkPos,
-    visible: bool,
     chunk_data: &[[TileKind; 32]; 32],
 ) -> Entity {
     let mut tile_storage = TileStorage::empty(TILEMAP_CHUNK_SIZE);
@@ -149,7 +140,7 @@ fn spawn_chunk(
                         old_position: TilePosOld::default(),
                     },
                     TileVisibility::Unknown,
-                    chunk_data[x as usize][y as usize]
+                    chunk_data[x as usize][y as usize],
                 ))
                 .id();
             commands.entity(tilemap_entity).add_child(tile_entity);
@@ -166,9 +157,6 @@ fn spawn_chunk(
             tile_size: TILEMAP_TILE_SIZE,
             map_type: TILEMAP_TYPE,
             transform: Transform::from_translation(chunk_in_world_position(pos).extend(0.0)),
-            visibility: Visibility {
-                is_visible: visible,
-            },
             ..default()
         },
         Chunk { pos },
@@ -181,7 +169,6 @@ fn load_chunks_player(
     mut commands: Commands,
     player_vehicles: Query<&MapPos, With<PlayerVehicle>>,
     mut loaded_chunks: ResMut<LoadedChunks>,
-    mut visible_chunks: ResMut<LoadedVisibleChunks>,
     map_tile_texture: Res<MapTilesSprites>,
     map_entity: Query<Entity, With<Map>>,
     mut generated_chunks: ResMut<GeneratedChunks>,
@@ -202,63 +189,12 @@ fn load_chunks_player(
                         .chunks
                         .entry(chunk_pos)
                         .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
-                    let chunk_entity = spawn_chunk(
-                        &mut commands,
-                        &map_tile_texture.0,
-                        chunk_pos,
-                        true,
-                        chunk_data,
-                    );
+                    let chunk_entity =
+                        spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, chunk_data);
                     loaded_chunks.0.insert(chunk_pos);
                     let mut map_entity_commands = commands.entity(map_entity);
                     map_entity_commands.add_child(chunk_entity);
                 }
-                if !visible_chunks.0.contains(&chunk_pos) {
-                    visible_chunks.0.insert(chunk_pos);
-                }
-            }
-        }
-    }
-}
-
-fn load_chunks_camera(
-    mut commands: Commands,
-    camera: Query<&Transform, With<Camera2d>>,
-    mut loaded_chunks: ResMut<LoadedChunks>,
-    mut visible_chunks: ResMut<LoadedVisibleChunks>,
-    map_tile_texture: Res<MapTilesSprites>,
-    map_entity: Query<Entity, With<Map>>,
-    mut generated_chunks: ResMut<GeneratedChunks>,
-    world_seed: Res<WorldSeed>,
-) {
-    let map_entity = map_entity.single();
-    let camera_transform = camera.single();
-    let camera_chunk_pos = camera_to_chunk_pos(camera_transform.translation.xy());
-    for x in (camera_chunk_pos.x - CAMERA_CHUNK_LOAD_DISTANCE)
-        ..=(camera_chunk_pos.x + CAMERA_CHUNK_LOAD_DISTANCE)
-    {
-        for y in (camera_chunk_pos.y - CAMERA_CHUNK_LOAD_DISTANCE)
-            ..=(camera_chunk_pos.y + CAMERA_CHUNK_LOAD_DISTANCE)
-        {
-            let chunk_pos = IVec2::new(x, y);
-            if !loaded_chunks.0.contains(&chunk_pos) {
-                let chunk_data = generated_chunks
-                    .chunks
-                    .entry(chunk_pos)
-                    .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
-                let chunk_entity = spawn_chunk(
-                    &mut commands,
-                    &map_tile_texture.0,
-                    chunk_pos,
-                    true,
-                    chunk_data,
-                );
-                loaded_chunks.0.insert(chunk_pos);
-                let mut map_entity_commands = commands.entity(map_entity);
-                map_entity_commands.add_child(chunk_entity);
-            }
-            if !visible_chunks.0.contains(&chunk_pos) {
-                visible_chunks.0.insert(chunk_pos);
             }
         }
     }
@@ -288,13 +224,8 @@ fn load_chunks_npc(
                         .chunks
                         .entry(chunk_pos)
                         .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
-                    let chunk_entity = spawn_chunk(
-                        &mut commands,
-                        &map_tile_texture.0,
-                        chunk_pos,
-                        false,
-                        chunk_data,
-                    );
+                    let chunk_entity =
+                        spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, chunk_data);
                     loaded_chunks.0.insert(chunk_pos);
                     let mut map_entity_commands = commands.entity(map_entity);
                     map_entity_commands.add_child(chunk_entity);
@@ -307,35 +238,17 @@ fn load_chunks_npc(
 fn chunk_unload(
     mut commands: Commands,
     player_vehicles: Query<&MapPos, With<PlayerVehicle>>,
-    camera: Query<&Transform, With<Camera2d>>,
     npcs: Query<&MapPos, With<Npc>>,
     chunks: Query<(Entity, &Chunk)>,
     mut loaded_chunks: ResMut<LoadedChunks>,
-    mut visible_chunks: ResMut<LoadedVisibleChunks>,
 ) {
     for (chunk_entity, Chunk { pos: chunk_pos }) in chunks.iter() {
         let mut player_chunk_positions = player_vehicles
             .iter()
             .map(|mp| chunk_and_local_from_global(mp.pos).0);
-        let camera_chunk_position = camera_to_chunk_pos(camera.single().translation.xy());
         let mut npcs_chunk_positions = npcs.iter().map(|mp| chunk_and_local_from_global(mp.pos).0);
         if !(player_chunk_positions
             .any(|p| is_chunk_in_radius(p, *chunk_pos, PLAYER_CHUNK_UNLOAD_DISTANCE))
-            || is_chunk_in_radius(
-                camera_chunk_position,
-                *chunk_pos,
-                CAMERA_CHUNK_UNLOAD_DISTANCE,
-            ))
-        {
-            visible_chunks.0.remove(chunk_pos);
-        }
-        if !(player_chunk_positions
-            .any(|p| is_chunk_in_radius(p, *chunk_pos, PLAYER_CHUNK_UNLOAD_DISTANCE))
-            || is_chunk_in_radius(
-                camera_chunk_position,
-                *chunk_pos,
-                CAMERA_CHUNK_UNLOAD_DISTANCE,
-            )
             || npcs_chunk_positions
                 .any(|p| is_chunk_in_radius(p, *chunk_pos, NPC_CHUNK_UNLOAD_DISTANCE)))
         {
