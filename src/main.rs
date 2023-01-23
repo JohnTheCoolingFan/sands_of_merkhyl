@@ -17,6 +17,8 @@ use rand::prelude::*;
 
 mod chunk_management;
 
+use chunk_management::TILEMAP_GRID_SIZE;
+
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const WINDOW_HEIGHT: f32 = 900.0;
 
@@ -28,6 +30,20 @@ const MAP_TILEMAP_Z: f32 = 900.0;
 
 const MAP_VIEW_SCALE: f32 = 30.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
+
+fn direction_to_rotation(direction: HexRowDirection) -> Quat {
+    Quat::from_rotation_z(
+        match direction {
+            HexRowDirection::East => -90_f32,
+            HexRowDirection::NorthEast => -30_f32,
+            HexRowDirection::NorthWest => 30_f32,
+            HexRowDirection::West => 90_f32,
+            HexRowDirection::SouthWest => 150_f32,
+            HexRowDirection::SouthEast => 210_f32,
+        }
+        .to_radians(),
+    )
+}
 
 type ChunkPos = IVec2;
 
@@ -227,7 +243,11 @@ fn spawn_map(mut commands: Commands) {
                     ..default()
                 },
                 DrawMode::Fill(FillMode::color(Color::rgb(0.0, 1.0, 0.0))),
-                Transform::from_xyz(0.0, 0.0, 10.0),
+                {
+                    let mut transform = Transform::from_xyz(0.0, 0.0, 10.0);
+                    transform.scale.x = 0.5;
+                    transform
+                },
             ),
         ))
         .id();
@@ -243,6 +263,22 @@ fn spawn_map(mut commands: Commands) {
         ))
         //.push_children(&chunks)
         .add_child(player_marker);
+}
+
+// Breaks when multiple player vehicles: Does not update. Add a entity id of a player vehicle to
+// each marker?
+fn update_marker(
+    mut marker: Query<&mut Transform, With<PlayerMapMarker>>,
+    player: Query<&MapPos, (With<PlayerVehicle>, Changed<MapPos>)>,
+) {
+    let mut marker_transform = marker.single_mut();
+    if let Ok(player_pos) = player.get_single() {
+        marker_transform.translation = player_pos
+            .pos
+            .center_in_world(&TILEMAP_GRID_SIZE)
+            .extend(marker_transform.translation.z);
+        marker_transform.rotation = direction_to_rotation(player_pos.current_direction);
+    }
 }
 
 fn update_map_tiles_texture(
@@ -298,7 +334,10 @@ fn camera_movement(
 
 fn switch_view(
     input: Res<Input<KeyCode>>,
-    mut camera: Query<(&mut OrthographicProjection, &mut Transform, &mut Visibility), With<Camera2d>>,
+    mut camera: Query<
+        (&mut OrthographicProjection, &mut Transform, &mut Visibility),
+        With<Camera2d>,
+    >,
     mut map: Query<&mut Visibility, (With<Map>, Without<Camera2d>)>,
     mut current_view: ResMut<CurrentView>,
 ) {
@@ -367,5 +406,6 @@ fn main() {
         .add_system(camera_movement)
         .add_system(switch_view)
         .add_system(update_map_tiles_texture)
+        .add_system(update_marker)
         .run();
 }

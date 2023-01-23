@@ -21,10 +21,10 @@ const NPC_CHUNK_UNLOAD_DISTANCE: i32 = 2;
 const CAMERA_CHUNK_LOAD_DISTANCE: i32 = 5;
 const CAMERA_CHUNK_UNLOAD_DISTANCE: i32 = 10;
 
-const TILEMAP_CHUNK_SIZE: TilemapSize = TilemapSize { x: 32, y: 32 };
-const TILEMAP_TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 28.0, y: 32.0 };
-const TILEMAP_GRID_SIZE: TilemapGridSize = TilemapGridSize { x: 28.0, y: 32.0 };
-const TILEMAP_TYPE: TilemapType = TilemapType::Hexagon(HexCoordSystem::RowEven);
+pub const TILEMAP_CHUNK_SIZE: TilemapSize = TilemapSize { x: 32, y: 32 };
+pub const TILEMAP_TILE_SIZE: TilemapTileSize = TilemapTileSize { x: 28.0, y: 32.0 };
+pub const TILEMAP_GRID_SIZE: TilemapGridSize = TilemapGridSize { x: 28.0, y: 32.0 };
+pub const TILEMAP_TYPE: TilemapType = TilemapType::Hexagon(HexCoordSystem::RowEven);
 
 pub struct ChunkManagementPlugin;
 
