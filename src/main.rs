@@ -5,7 +5,6 @@ use bevy::{
     prelude::*,
     render::camera::ScalingMode,
     sprite::Anchor,
-    utils::{FloatOrd, HashMap},
     window::PresentMode,
 };
 use bevy_ecs_tilemap::{
@@ -15,7 +14,6 @@ use bevy_ecs_tilemap::{
 use bevy_prototype_lyon::prelude::*;
 use chunk_management::ChunkManagementPlugin;
 use rand::prelude::*;
-use rangemap::map::RangeMap;
 
 mod chunk_management;
 
