@@ -31,6 +31,7 @@ const MAP_TILEMAP_Z: f32 = 900.0;
 const MAP_VIEW_SCALE: f32 = 30.0;
 const PLATFORM_VIEW_SCALE: f32 = 25.0;
 
+#[inline]
 fn direction_to_rotation(direction: HexRowDirection) -> Quat {
     Quat::from_rotation_z(
         match direction {
