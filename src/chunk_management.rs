@@ -6,11 +6,10 @@ use super::{
 };
 use bevy::{
     prelude::*,
-    utils::{FloatOrd, HashMap, HashSet},
+    utils::{HashMap, HashSet},
 };
 use bevy_ecs_tilemap::{helpers::hex_grid::offset::RowEvenPos, prelude::*};
-use rand::prelude::*;
-use rangemap::RangeMap;
+use rand::{distributions::WeightedIndex, prelude::*};
 
 // Test and adjust
 const PLAYER_CHUNK_LOAD_DISTANCE: i32 = 3;
@@ -45,28 +44,21 @@ struct GeneratedChunks {
     chunks: HashMap<ChunkPos, [[TileKind; 32]; 32]>,
 }
 
-fn rangemap_from_weights(weights: Vec<(TileKind, f32)>) -> RangeMap<FloatOrd, TileKind> {
-    let weights_sum: f32 = weights.iter().map(|(_, w)| w).sum();
-    let mut weight_so_far: f32 = 0.0;
-    weights
-        .into_iter()
-        .map(|(k, w)| {
-            let range =
-                FloatOrd(weight_so_far / weights_sum)..FloatOrd((weight_so_far + w) / weights_sum);
-            weight_so_far += w;
-            (range, k)
-        })
-        .collect()
-}
-
 fn generate_chunk(world_seed: &[u8; 32], chunk_pos: ChunkPos) -> [[TileKind; 32]; 32] {
     let mut chunk_seed = *world_seed;
     chunk_seed[24..28].copy_from_slice(&chunk_pos.x.to_le_bytes());
     chunk_seed[28..32].copy_from_slice(&chunk_pos.y.to_le_bytes());
-    let mut rng = SmallRng::from_seed(chunk_seed);
-    let generated_values: [[f32; 32]; 32] = rng.gen();
-    let rangemap = rangemap_from_weights(vec![(TileKind::Empty, 200.0), (TileKind::Village, 5.0)]);
-    generated_values.map(|row| row.map(|v| *rangemap.get(&FloatOrd(v)).unwrap()))
+    let rng = SmallRng::from_seed(chunk_seed);
+    let weights = vec![(TileKind::Empty, 200.0), (TileKind::Village, 5.0)];
+    let dist = WeightedIndex::new(weights.iter().map(|item| item.1)).unwrap();
+    let dist_iter = dist.map(|i| weights[i].0).sample_iter(rng);
+    let values: Vec<TileKind> = dist_iter.take(32 * 32).collect();
+    let result: Vec<[TileKind; 32]> = values
+        .chunks(32)
+        .map(TryInto::try_into)
+        .map(Result::unwrap)
+        .collect();
+    result.try_into().unwrap()
 }
 
 pub fn chunk_and_local_from_global(global_pos: RowEvenPos) -> (ChunkPos, TilePos) {
