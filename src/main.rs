@@ -12,7 +12,7 @@ use bevy_ecs_tilemap::{
     prelude::{offset::RowEvenPos, *},
 };
 use bevy_prototype_lyon::prelude::*;
-use chunk_management::ChunkManagementPlugin;
+use chunk_management::{global_from_chunk_and_local, ChunkManagementPlugin};
 use rand::prelude::*;
 
 mod chunk_management;
@@ -217,7 +217,7 @@ fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
         MapPos::default(),
         MiningPlatform,
         PlayerVehicle,
-        ChartRange(2),
+        ChartRange(5),
     ));
     // For visualizing vehicle center on the ground level
     /*
@@ -264,6 +264,28 @@ fn spawn_map(mut commands: Commands) {
         ))
         //.push_children(&chunks)
         .add_child(player_marker);
+}
+
+fn chart_map(
+    player: Query<(&MapPos, &ChartRange), With<PlayerVehicle>>,
+    mut tiles: Query<(&mut TileVisibility, &TilePos, &TilemapId)>,
+    chunks: Query<&Chunk>,
+) {
+    let (player_pos, chart_range) = player.single();
+    let tiles_in_chart_range: Vec<RowEvenPos> =
+        generate_hexagon(player_pos.pos.into(), chart_range.0)
+            .into_iter()
+            .map(Into::into)
+            .collect();
+    for (mut tile_vis, tile_pos, tilemap_id) in tiles.iter_mut() {
+        let chunk = chunks.get(tilemap_id.0).unwrap();
+        let global_tile_pos = global_from_chunk_and_local(chunk.pos, *tile_pos);
+        if tiles_in_chart_range.contains(&global_tile_pos) {
+            *tile_vis = TileVisibility::Visible
+        } else if matches!(*tile_vis, TileVisibility::Visible) {
+            *tile_vis = TileVisibility::Charted
+        }
+    }
 }
 
 // Breaks when multiple player vehicles: Does not update. Add a entity id of a player vehicle to
@@ -408,5 +430,6 @@ fn main() {
         .add_system(switch_view)
         .add_system(update_map_tiles_texture)
         .add_system(update_marker)
+        .add_system(chart_map)
         .run();
 }
