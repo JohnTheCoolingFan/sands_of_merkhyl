@@ -48,17 +48,12 @@ fn generate_chunk(world_seed: &[u8; 32], chunk_pos: ChunkPos) -> [[TileKind; 32]
     let mut chunk_seed = *world_seed;
     chunk_seed[24..28].copy_from_slice(&chunk_pos.x.to_le_bytes());
     chunk_seed[28..32].copy_from_slice(&chunk_pos.y.to_le_bytes());
-    let rng = SmallRng::from_seed(chunk_seed);
-    let weights = vec![(TileKind::Empty, 200.0), (TileKind::Village, 5.0)];
-    let dist = WeightedIndex::new(weights.iter().map(|item| item.1)).unwrap();
-    let dist_iter = dist.map(|i| weights[i].0).sample_iter(rng);
-    let values: Vec<TileKind> = dist_iter.take(32 * 32).collect();
-    let result: Vec<[TileKind; 32]> = values
-        .chunks(32)
-        .map(TryInto::try_into)
-        .map(Result::unwrap)
-        .collect();
-    result.try_into().unwrap()
+    let mut rng = SmallRng::from_seed(chunk_seed);
+    let weights = [(TileKind::Empty, 200.0), (TileKind::Village, 5.0)];
+    let dist = WeightedIndex::new(weights.iter().map(|item| item.1))
+        .unwrap()
+        .map(|i| weights[i].0);
+    std::array::from_fn(|_| std::array::from_fn(|_| dist.sample(&mut rng)))
 }
 
 pub fn chunk_and_local_from_global(global_pos: RowEvenPos) -> (ChunkPos, TilePos) {
