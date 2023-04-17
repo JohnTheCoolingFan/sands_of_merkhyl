@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
     render::camera::ScalingMode,
     sprite::Anchor,
-    window::PresentMode,
+    window::{PresentMode, WindowResolution},
 };
 use bevy_ecs_tilemap::{
     helpers::hex_grid::neighbors::HexRowDirection,
@@ -35,10 +35,10 @@ const PLATFORM_VIEW_SCALE: f32 = 25.0;
 fn direction_to_rotation(direction: HexRowDirection) -> Quat {
     Quat::from_rotation_z(
         match direction {
-            HexRowDirection::East => -90_f32,
+            HexRowDirection::North => 0_f32,
             HexRowDirection::NorthEast => -30_f32,
             HexRowDirection::NorthWest => 30_f32,
-            HexRowDirection::West => 90_f32,
+            HexRowDirection::South => -180_f32,
             HexRowDirection::SouthWest => 150_f32,
             HexRowDirection::SouthEast => 210_f32,
         }
@@ -93,7 +93,7 @@ impl Default for MapPos {
     fn default() -> Self {
         Self {
             pos: RowEvenPos { q: 0, r: 0 },
-            current_direction: HexRowDirection::East,
+            current_direction: HexRowDirection::North,
             target_direction: None,
             reverse: false,
             progress: 0.5,
@@ -170,35 +170,43 @@ struct PlayerDirectionMapMarker;
 fn spawn_camera(mut commands: Commands) {
     let mut camera = Camera2dBundle::default();
 
+    /*
     camera.projection.top = 1.0;
     camera.projection.bottom = -1.0;
     camera.projection.right = 1.0 * ASPECT_RATIO;
     camera.projection.left = -1.0 * ASPECT_RATIO;
+    */
 
     camera.projection.scale = PLATFORM_VIEW_SCALE;
     camera.transform.translation.y = 6.0;
 
-    camera.projection.scaling_mode = ScalingMode::None;
+    camera.projection.scaling_mode = ScalingMode::Fixed {
+        height: 2.0,
+        width: 2.0 * ASPECT_RATIO,
+    };
 
     commands
         .spawn((
             camera,
             VisibilityBundle {
-                visibility: Visibility { is_visible: false },
+                visibility: Visibility::Hidden,
                 computed: ComputedVisibility::default(),
             },
         ))
         .with_children(|cb| {
-            cb.spawn(GeometryBuilder::build_as(
-                &shapes::Rectangle {
-                    extents: Vec2 {
-                        x: 1000.0,
-                        y: 1000.0,
-                    },
-                    origin: RectangleOrigin::Center,
+            cb.spawn((
+                ShapeBundle {
+                    path: GeometryBuilder::build_as(&shapes::Rectangle {
+                        extents: Vec2 {
+                            x: 1000.0,
+                            y: 1000.0,
+                        },
+                        origin: RectangleOrigin::Center,
+                    }),
+                    transform: Transform::from_xyz(0.0, 0.0, -300.0),
+                    ..default()
                 },
-                DrawMode::Fill(FillMode::color(CLEAR_COLOR)),
-                Transform::from_xyz(0.0, 0.0, -300.0),
+                Fill::color(CLEAR_COLOR),
             ));
         });
 }
@@ -237,19 +245,21 @@ fn spawn_map(mut commands: Commands) {
     let player_marker = commands
         .spawn((
             PlayerMapMarker,
-            GeometryBuilder::build_as(
-                &shapes::RegularPolygon {
+            ShapeBundle {
+                path: GeometryBuilder::build_as(&shapes::RegularPolygon {
                     sides: 3,
                     feature: shapes::RegularPolygonFeature::Radius(8.0),
                     ..default()
-                },
-                DrawMode::Fill(FillMode::color(Color::rgb(0.0, 1.0, 0.0))),
-                {
-                    let mut transform = Transform::from_xyz(0.0, 0.0, 10.0);
-                    transform.scale.x = 0.5;
-                    transform
-                },
-            ),
+                }),
+                transform: Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3 {
+                    x: 0.5,
+                    y: 0.0,
+                    z: 0.0,
+                }),
+                global_transform: GlobalTransform::default(),
+                ..default()
+            },
+            Fill::color(Color::rgb(0.0, 1.0, 0.0)),
         ))
         .id();
 
@@ -258,7 +268,7 @@ fn spawn_map(mut commands: Commands) {
             Map,
             TransformBundle::from_transform(Transform::from_xyz(0.0, 0.0, MAP_TILEMAP_Z)),
             VisibilityBundle {
-                visibility: Visibility { is_visible: false },
+                visibility: Visibility::Hidden,
                 ..default()
             },
         ))
@@ -368,16 +378,16 @@ fn switch_view(
         current_view.toggle();
         match *current_view {
             CurrentView::Map => {
-                map.single_mut().is_visible = true;
+                *map.single_mut() = Visibility::Visible;
                 let (mut projection, mut cam_transform, mut cam_visibility) = camera.single_mut();
-                cam_visibility.is_visible = true;
+                *cam_visibility = Visibility::Visible;
                 projection.scale = MAP_VIEW_SCALE;
                 cam_transform.translation = Vec2::new(0.0, 0.0).extend(cam_transform.translation.z);
             }
             CurrentView::Platform => {
-                map.single_mut().is_visible = false;
+                *map.single_mut() = Visibility::Hidden;
                 let (mut projection, mut cam_transform, mut cam_visibility) = camera.single_mut();
-                cam_visibility.is_visible = false;
+                *cam_visibility = Visibility::Hidden;
                 projection.scale = PLATFORM_VIEW_SCALE;
                 cam_transform.translation = Vec2::new(0.0, 6.0).extend(cam_transform.translation.z);
             }
@@ -406,14 +416,16 @@ fn main() {
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
-                    window: WindowDescriptor {
+                    primary_window: Some(Window {
                         title: "Sun never sets on the sands of Merkhyl".to_string(),
                         present_mode: PresentMode::Fifo,
-                        height: WINDOW_HEIGHT,
-                        width: WINDOW_HEIGHT * ASPECT_RATIO,
+                        resolution: WindowResolution::new(
+                            WINDOW_HEIGHT * ASPECT_RATIO,
+                            WINDOW_HEIGHT,
+                        ),
                         resizable: false,
                         ..default()
-                    },
+                    }),
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest()),
@@ -421,7 +433,7 @@ fn main() {
         .add_plugin(ShapePlugin) // bevy_prototype_lyon
         .add_plugin(TilemapPlugin)
         .add_plugin(ChunkManagementPlugin)
-        .add_startup_system_to_stage(StartupStage::PreStartup, load_assets)
+        .add_startup_system(load_assets.in_base_set(StartupSet::PreStartup))
         .add_startup_system(generate_world_seed)
         .add_startup_system(spawn_platform)
         .add_startup_system(spawn_camera)

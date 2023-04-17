@@ -81,7 +81,10 @@ pub fn chunk_in_world_position(pos: ChunkPos) -> Vec2 {
 
 pub fn chunk_center_position(pos: ChunkPos) -> Vec2 {
     let origin_pos = chunk_in_world_position(pos);
-    origin_pos + get_tilemap_center(&TILEMAP_CHUNK_SIZE, &TILEMAP_GRID_SIZE, &TILEMAP_TYPE)
+    origin_pos
+        + get_tilemap_center_transform(&TILEMAP_CHUNK_SIZE, &TILEMAP_GRID_SIZE, &TILEMAP_TYPE, 0.0)
+            .translation
+            .truncate()
 }
 
 pub fn camera_to_chunk_pos(camera_pos: Vec2) -> ChunkPos {
