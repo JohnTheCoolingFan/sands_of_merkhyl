@@ -76,15 +76,7 @@ pub fn global_from_chunk_and_local(chunk: IVec2, local: TilePos) -> RowEvenPos {
 }
 
 pub fn chunk_in_world_position(pos: ChunkPos) -> Vec2 {
-    Vec2::new(
-        TILEMAP_TILE_SIZE.x * TILEMAP_CHUNK_SIZE.x as f32 * pos.x as f32,
-        TilePos {
-            x: 0,
-            y: TILEMAP_CHUNK_SIZE.y,
-        }
-        .center_in_world(&TILEMAP_GRID_SIZE, &TILEMAP_TYPE)
-        .y * pos.y as f32,
-    )
+    global_from_chunk_and_local(pos, TilePos { x: 0, y: 0 }).center_in_world(&TILEMAP_GRID_SIZE)
 }
 
 pub fn chunk_center_position(pos: ChunkPos) -> Vec2 {
