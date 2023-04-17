@@ -405,7 +405,7 @@ fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
 fn generate_world_seed(mut commands: Commands) {
     let mut seed: [u8; 32] = thread_rng().gen();
     seed[(32 - 8)..].copy_from_slice(&[0; 8]);
-    println!("World seed is {:02X?}", seed);
+    info!("World seed is {:02X?}", seed);
     commands.insert_resource(WorldSeed { seed });
 }
 
