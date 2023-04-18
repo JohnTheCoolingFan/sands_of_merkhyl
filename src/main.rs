@@ -253,8 +253,8 @@ fn spawn_map(mut commands: Commands) {
                 }),
                 transform: Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3 {
                     x: 0.5,
-                    y: 0.0,
-                    z: 0.0,
+                    y: 1.0,
+                    z: 1.0,
                 }),
                 global_transform: GlobalTransform::default(),
                 ..default()
