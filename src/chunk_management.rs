@@ -103,49 +103,55 @@ fn spawn_chunk(
     texture_handle: &Handle<Image>,
     pos: ChunkPos,
     chunk_data: &[[TileKind; 32]; 32],
-) -> Entity {
-    let mut tile_storage = TileStorage::empty(TILEMAP_CHUNK_SIZE);
-    let tilemap_entity = commands.spawn_empty().id();
-    let tilemap_id = TilemapId(tilemap_entity);
+    map_entity: Entity,
+) {
+    commands
+        .entity(map_entity)
+        .with_children(|map_child_builder| {
+            let mut tile_storage = TileStorage::empty(TILEMAP_CHUNK_SIZE);
+            map_child_builder
+                .spawn_empty()
+                .with_children(|cb| {
+                    let tilemap_id = TilemapId(cb.parent_entity());
 
-    for x in 0..TILEMAP_CHUNK_SIZE.x {
-        for y in 0..TILEMAP_CHUNK_SIZE.y {
-            let pos = TilePos { x, y };
-            let tile_entity = commands
-                .spawn((
-                    TileBundle {
-                        position: pos,
-                        texture_index: TileTextureIndex(0), // TODO,
-                        tilemap_id,
-                        visible: TileVisible(true),
-                        flip: TileFlip::default(),
-                        color: TileColor::default(),
-                        old_position: TilePosOld::default(),
+                    for x in 0..TILEMAP_CHUNK_SIZE.x {
+                        for y in 0..TILEMAP_CHUNK_SIZE.y {
+                            let pos = TilePos { x, y };
+                            let tile_entity = cb
+                                .spawn((
+                                    TileBundle {
+                                        position: pos,
+                                        texture_index: TileTextureIndex(0), // TODO,
+                                        tilemap_id,
+                                        visible: TileVisible(true),
+                                        flip: TileFlip::default(),
+                                        color: TileColor::default(),
+                                        old_position: TilePosOld::default(),
+                                    },
+                                    TileVisibility::Unknown,
+                                    chunk_data[x as usize][y as usize],
+                                ))
+                                .id();
+                            tile_storage.set(&pos, tile_entity);
+                        }
+                    }
+                })
+                .insert((
+                    TilemapBundle {
+                        grid_size: TILEMAP_GRID_SIZE,
+                        size: TILEMAP_CHUNK_SIZE,
+                        storage: tile_storage,
+                        texture: TilemapTexture::Single(texture_handle.clone()),
+                        tile_size: TILEMAP_TILE_SIZE,
+                        map_type: TILEMAP_TYPE,
+                        transform: Transform::from_translation(
+                            chunk_in_world_position(pos).extend(0.0),
+                        ),
+                        ..default()
                     },
-                    TileVisibility::Unknown,
-                    chunk_data[x as usize][y as usize],
-                ))
-                .id();
-            commands.entity(tilemap_entity).add_child(tile_entity);
-            tile_storage.set(&pos, tile_entity);
-        }
-    }
-
-    commands.entity(tilemap_entity).insert((
-        TilemapBundle {
-            grid_size: TILEMAP_GRID_SIZE,
-            size: TILEMAP_CHUNK_SIZE,
-            storage: tile_storage,
-            texture: TilemapTexture::Single(texture_handle.clone()),
-            tile_size: TILEMAP_TILE_SIZE,
-            map_type: TILEMAP_TYPE,
-            transform: Transform::from_translation(chunk_in_world_position(pos).extend(0.0)),
-            ..default()
-        },
-        Chunk { pos },
-    ));
-
-    tilemap_entity
+                    Chunk { pos },
+                ));
+        });
 }
 
 fn load_chunks_player(
@@ -172,15 +178,14 @@ fn load_chunks_player(
                         .chunks
                         .entry(chunk_pos)
                         .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
-                    let chunk_entity = spawn_chunk(
+                    spawn_chunk(
                         &mut commands,
                         &map_tile_texture.map_tiles,
                         chunk_pos,
                         chunk_data,
+                        map_entity,
                     );
                     loaded_chunks.0.insert(chunk_pos);
-                    let mut map_entity_commands = commands.entity(map_entity);
-                    map_entity_commands.add_child(chunk_entity);
                 }
             }
         }
@@ -211,15 +216,14 @@ fn load_chunks_npc(
                         .chunks
                         .entry(chunk_pos)
                         .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
-                    let chunk_entity = spawn_chunk(
+                    spawn_chunk(
                         &mut commands,
                         &map_tile_texture.map_tiles,
                         chunk_pos,
                         chunk_data,
+                        map_entity,
                     );
                     loaded_chunks.0.insert(chunk_pos);
-                    let mut map_entity_commands = commands.entity(map_entity);
-                    map_entity_commands.add_child(chunk_entity);
                 }
             }
         }
