@@ -1,8 +1,9 @@
 #![allow(clippy::too_many_arguments)]
 
+use crate::SpriteAssets;
+
 use super::{
-    Chunk, ChunkPos, Map, MapPos, MapTilesSprites, Npc, PlayerVehicle, TileKind, TileVisibility,
-    WorldSeed,
+    Chunk, ChunkPos, Map, MapPos, Npc, PlayerVehicle, TileKind, TileVisibility, WorldSeed,
 };
 use bevy::{
     prelude::*,
@@ -151,7 +152,7 @@ fn load_chunks_player(
     mut commands: Commands,
     player_vehicles: Query<&MapPos, With<PlayerVehicle>>,
     mut loaded_chunks: ResMut<LoadedChunks>,
-    map_tile_texture: Res<MapTilesSprites>,
+    map_tile_texture: Res<SpriteAssets>,
     map_entity: Query<Entity, With<Map>>,
     mut generated_chunks: ResMut<GeneratedChunks>,
     world_seed: Res<WorldSeed>,
@@ -171,8 +172,12 @@ fn load_chunks_player(
                         .chunks
                         .entry(chunk_pos)
                         .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
-                    let chunk_entity =
-                        spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, chunk_data);
+                    let chunk_entity = spawn_chunk(
+                        &mut commands,
+                        &map_tile_texture.map_tiles,
+                        chunk_pos,
+                        chunk_data,
+                    );
                     loaded_chunks.0.insert(chunk_pos);
                     let mut map_entity_commands = commands.entity(map_entity);
                     map_entity_commands.add_child(chunk_entity);
@@ -186,7 +191,7 @@ fn load_chunks_npc(
     mut commands: Commands,
     npcs: Query<&MapPos, With<Npc>>,
     mut loaded_chunks: ResMut<LoadedChunks>,
-    map_tile_texture: Res<MapTilesSprites>,
+    map_tile_texture: Res<SpriteAssets>,
     map_entity: Query<Entity, With<Map>>,
     mut generated_chunks: ResMut<GeneratedChunks>,
     world_seed: Res<WorldSeed>,
@@ -206,8 +211,12 @@ fn load_chunks_npc(
                         .chunks
                         .entry(chunk_pos)
                         .or_insert_with(|| generate_chunk(&world_seed.seed, chunk_pos));
-                    let chunk_entity =
-                        spawn_chunk(&mut commands, &map_tile_texture.0, chunk_pos, chunk_data);
+                    let chunk_entity = spawn_chunk(
+                        &mut commands,
+                        &map_tile_texture.map_tiles,
+                        chunk_pos,
+                        chunk_data,
+                    );
                     loaded_chunks.0.insert(chunk_pos);
                     let mut map_entity_commands = commands.entity(map_entity);
                     map_entity_commands.add_child(chunk_entity);

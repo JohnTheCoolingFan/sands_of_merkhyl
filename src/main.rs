@@ -78,6 +78,15 @@ struct WorldSeed {
     seed: [u8; 32],
 }
 
+impl Default for WorldSeed {
+    fn default() -> Self {
+        let mut seed: [u8; 32] = thread_rng().gen();
+        seed[(32 - 8)..].copy_from_slice(&[0; 8]);
+        info!("World seed is {:02X?}", seed);
+        WorldSeed { seed }
+    }
+}
+
 /// Position on a map, with track of how much progress is made through the map tile and what the
 /// next tile should be
 #[derive(Component, Debug, Clone, PartialEq)]
@@ -124,13 +133,26 @@ impl PathfindingPos {
     }
 }
 
-/// Mining platform sprite
+/// Spirtes used in the game
 #[derive(Resource)]
-struct MiningPlatformSprite(Handle<Image>);
+struct SpriteAssets {
+    /// Mining platform sprite
+    mining_platform: Handle<Image>,
+    /// Sptitesheet of map tiles
+    map_tiles: Handle<Image>,
+}
 
-/// Sptitesheet of map tiles
-#[derive(Resource)]
-struct MapTilesSprites(Handle<Image>);
+impl FromWorld for SpriteAssets {
+    fn from_world(world: &mut World) -> Self {
+        let asset_server = world.get_resource::<AssetServer>().unwrap();
+        let mining_platform = asset_server.load("mining_platform.dds");
+        let map_tiles = asset_server.load("map_tiles.dds");
+        Self {
+            mining_platform,
+            map_tiles,
+        }
+    }
+}
 
 /// Current view mode, map is hiddent when viewing the world
 #[derive(Resource)]
@@ -211,10 +233,10 @@ fn spawn_camera(mut commands: Commands) {
         });
 }
 
-fn spawn_platform(mut commands: Commands, sprite: Res<MiningPlatformSprite>) {
+fn spawn_platform(mut commands: Commands, sprite: Res<SpriteAssets>) {
     commands.spawn((
         SpriteBundle {
-            texture: sprite.0.clone(),
+            texture: sprite.mining_platform.clone(),
             sprite: Sprite {
                 custom_size: Some(Vec2::from((48.0, 44.0))),
                 anchor: Anchor::Custom(Vec2::from((0.5 / 12.0, -1.5 / 11.0))),
@@ -395,20 +417,6 @@ fn switch_view(
     }
 }
 
-fn load_assets(mut commands: Commands, assets: Res<AssetServer>) {
-    let mining_platform_sprite = assets.load("mining_platform.dds");
-    commands.insert_resource(MiningPlatformSprite(mining_platform_sprite));
-    let tile_texture = assets.load("map_tiles.dds");
-    commands.insert_resource(MapTilesSprites(tile_texture));
-}
-
-fn generate_world_seed(mut commands: Commands) {
-    let mut seed: [u8; 32] = thread_rng().gen();
-    seed[(32 - 8)..].copy_from_slice(&[0; 8]);
-    info!("World seed is {:02X?}", seed);
-    commands.insert_resource(WorldSeed { seed });
-}
-
 fn main() {
     App::new()
         .insert_resource(ClearColor(CLEAR_COLOR))
@@ -433,8 +441,8 @@ fn main() {
         .add_plugin(ShapePlugin) // bevy_prototype_lyon
         .add_plugin(TilemapPlugin)
         .add_plugin(ChunkManagementPlugin)
-        .add_startup_system(load_assets.in_base_set(StartupSet::PreStartup))
-        .add_startup_system(generate_world_seed)
+        .init_resource::<SpriteAssets>()
+        .init_resource::<WorldSeed>()
         .add_startup_system(spawn_platform)
         .add_startup_system(spawn_camera)
         .add_startup_system(spawn_map)
