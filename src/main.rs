@@ -264,6 +264,14 @@ fn spawn_platform(mut commands: Commands, sprite: Res<SpriteAssets>) {
 }
 
 fn spawn_map(mut commands: Commands) {
+    let TransformBundle {
+        local: transform,
+        global: global_transform,
+    } = TransformBundle::from_transform(Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3 {
+        x: 0.5,
+        y: 1.0,
+        z: 1.0,
+    }));
     let player_marker = commands
         .spawn((
             PlayerMapMarker,
@@ -273,12 +281,8 @@ fn spawn_map(mut commands: Commands) {
                     feature: shapes::RegularPolygonFeature::Radius(8.0),
                     ..default()
                 }),
-                transform: Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3 {
-                    x: 0.5,
-                    y: 1.0,
-                    z: 1.0,
-                }),
-                global_transform: GlobalTransform::default(),
+                transform,
+                global_transform,
                 ..default()
             },
             Fill::color(Color::rgb(0.0, 1.0, 0.0)),
